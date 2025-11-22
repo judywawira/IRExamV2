@@ -26,26 +26,63 @@ def sha256_hash(password: str) -> str:
     """
     Pre-hash password with SHA-256
     This bypasses bcrypt's 72-byte limit
+    Returns a 64-character hex string (32 bytes * 2)
     """
-    return hashlib.sha256(password.encode()).hexdigest()
+    if not isinstance(password, str):
+        raise ValueError("Password must be a string")
+
+    # SHA-256 produces a 64-character hex digest (always under 72 bytes)
+    return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
 
 def hash_password(password: str) -> str:
     """
     Hash password using SHA-256 + bcrypt
-    Step 1: SHA-256 pre-hash (client-side simulation)
+    Step 1: SHA-256 pre-hash (bypasses 72-byte bcrypt limit)
     Step 2: bcrypt hash for storage
+
+    Args:
+        password: Raw password string (any length)
+
+    Returns:
+        Bcrypt hash of the SHA-256 digest
     """
-    # In production, client should send SHA-256 hash
-    # For development, we hash here
+    if not password:
+        raise ValueError("Password cannot be empty")
+
+    # Pre-hash with SHA-256 to handle any password length
     sha256_pass = sha256_hash(password)
-    return pwd_context.hash(sha256_pass)
+
+    # SHA-256 hex digest is exactly 64 chars, well under bcrypt's 72-byte limit
+    # This should never raise the 72-byte error
+    try:
+        return pwd_context.hash(sha256_pass)
+    except ValueError as e:
+        # This should never happen with SHA-256, but handle it gracefully
+        raise ValueError(f"Password hashing failed: {e}. SHA-256 digest length: {len(sha256_pass)}")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify password against hash"""
-    sha256_pass = sha256_hash(plain_password)
-    return pwd_context.verify(sha256_pass, hashed_password)
+    """
+    Verify password against hash
+
+    Args:
+        plain_password: Raw password to verify
+        hashed_password: Stored bcrypt hash
+
+    Returns:
+        True if password matches, False otherwise
+    """
+    if not plain_password or not hashed_password:
+        return False
+
+    try:
+        # Pre-hash the plain password the same way we did during hashing
+        sha256_pass = sha256_hash(plain_password)
+        return pwd_context.verify(sha256_pass, hashed_password)
+    except Exception:
+        # If verification fails for any reason, return False
+        return False
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
