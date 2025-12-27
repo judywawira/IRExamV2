@@ -1,6 +1,6 @@
 /**
  * Case Form Page (Create/Edit)
- * Enhanced with image upload during case creation
+ * Restructured workflow with findings per image
  */
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -14,11 +14,9 @@ function CaseForm() {
   const [formData, setFormData] = useState({
     title: '',
     clinical_history: '',
-    findings: '',
-    diagnosis: '',
-    discussion_points: ''
+    discussion_points: '',
+    diagnosis: ''
   })
-  const [selectedImages, setSelectedImages] = useState([])
   const [imagePreviews, setImagePreviews] = useState([])
   const [loading, setLoading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState('')
@@ -36,9 +34,8 @@ function CaseForm() {
       setFormData({
         title: response.data.title,
         clinical_history: response.data.clinical_history || '',
-        findings: response.data.findings || '',
-        diagnosis: response.data.diagnosis || '',
-        discussion_points: response.data.discussion_points || ''
+        discussion_points: response.data.discussion_points || '',
+        diagnosis: response.data.diagnosis || ''
       })
       // Load existing images if editing
       if (response.data.images && response.data.images.length > 0) {
@@ -46,7 +43,7 @@ function CaseForm() {
           id: img.id,
           url: img.url,
           original_name: img.original_name,
-          description: img.description,
+          findings: img.description || '', // Map description to findings
           isExisting: true
         }))
         setImagePreviews(existingPreviews)
@@ -81,9 +78,6 @@ function CaseForm() {
 
     if (validFiles.length === 0) return
 
-    // Add to selected images
-    setSelectedImages(prev => [...prev, ...validFiles])
-
     // Create previews
     validFiles.forEach(file => {
       const reader = new FileReader()
@@ -92,7 +86,7 @@ function CaseForm() {
           file,
           url: reader.result,
           original_name: file.name,
-          description: '',
+          findings: '', // Initialize with empty findings
           isExisting: false
         }])
       }
@@ -104,30 +98,56 @@ function CaseForm() {
   }
 
   const handleRemoveImage = (index) => {
-    const preview = imagePreviews[index]
-
-    // Remove from previews
     setImagePreviews(prev => prev.filter((_, i) => i !== index))
-
-    // Remove from selected files if not existing
-    if (!preview.isExisting) {
-      setSelectedImages(prev => {
-        const fileIndex = prev.findIndex(f => f.name === preview.file.name)
-        return prev.filter((_, i) => i !== fileIndex)
-      })
-    }
   }
 
-  const handleImageDescriptionChange = (index, description) => {
+  const handleImageFindingsChange = (index, findings) => {
     setImagePreviews(prev => prev.map((preview, i) =>
-      i === index ? { ...preview, description } : preview
+      i === index ? { ...preview, findings } : preview
     ))
+  }
+
+  const validateForm = () => {
+    // Check required text fields
+    if (!formData.title.trim()) {
+      setError('Title is required')
+      return false
+    }
+    if (!formData.clinical_history.trim()) {
+      setError('Clinical History is required')
+      return false
+    }
+    if (!formData.discussion_points.trim()) {
+      setError('Discussion Points are required')
+      return false
+    }
+    if (!formData.diagnosis.trim()) {
+      setError('Diagnosis is required')
+      return false
+    }
+
+    // Check that each image has findings
+    const newImages = imagePreviews.filter(p => !p.isExisting)
+    for (let i = 0; i < newImages.length; i++) {
+      if (!newImages[i].findings.trim()) {
+        setError(`Findings are required for image: ${newImages[i].original_name}`)
+        return false
+      }
+    }
+
+    return true
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setLoading(true)
     setError('')
+
+    // Validate form
+    if (!validateForm()) {
+      return
+    }
+
+    setLoading(true)
     setUploadProgress('')
 
     try {
@@ -143,7 +163,7 @@ function CaseForm() {
         caseId = response.data.id
       }
 
-      // Step 2: Upload new images (only for new files, not existing ones)
+      // Step 2: Upload new images with findings (only for new files, not existing ones)
       const newImages = imagePreviews.filter(preview => !preview.isExisting)
 
       if (newImages.length > 0) {
@@ -152,7 +172,8 @@ function CaseForm() {
           setUploadProgress(`Uploading image ${i + 1} of ${newImages.length}...`)
 
           try {
-            await casesAPI.uploadImage(caseId, preview.file, preview.description)
+            // Use findings as the description
+            await casesAPI.uploadImage(caseId, preview.file, preview.findings)
           } catch (uploadError) {
             console.error(`Failed to upload ${preview.original_name}:`, uploadError)
             setError(`Warning: Failed to upload ${preview.original_name}`)
@@ -163,9 +184,9 @@ function CaseForm() {
 
       setUploadProgress('Complete!')
 
-      // Navigate to cases list
+      // Navigate to case view
       setTimeout(() => {
-        navigate('/cases')
+        navigate(`/cases/${caseId}`)
       }, 500)
 
     } catch (err) {
@@ -177,11 +198,11 @@ function CaseForm() {
   }
 
   return (
-    <div className="container" style={{ maxWidth: '1200px' }}>
+    <div className="container" style={{ maxWidth: '900px' }}>
       <h1>{isEdit ? 'Edit Case' : 'Create Case'}</h1>
 
       {error && (
-        <div className="error" style={{ marginBottom: '20px' }}>
+        <div className="error" style={{ marginBottom: '20px', padding: '15px', borderRadius: '6px' }}>
           {error}
         </div>
       )}
@@ -190,7 +211,7 @@ function CaseForm() {
         <div style={{
           padding: '15px',
           backgroundColor: '#e3f2fd',
-          borderRadius: '4px',
+          borderRadius: '6px',
           marginBottom: '20px',
           color: '#1976d2',
           fontWeight: '500'
@@ -199,208 +220,246 @@ function CaseForm() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: imagePreviews.length > 0 ? '1fr 400px' : '1fr', gap: '20px' }}>
+      <div className="card">
+        <form onSubmit={handleSubmit}>
+          {/* 1. Title (mandatory) */}
+          <div className="form-group">
+            <label className="form-label">
+              Title <span style={{ color: '#d32f2f' }}>*</span>
+            </label>
+            <input
+              type="text"
+              name="title"
+              className="form-input"
+              value={formData.title}
+              onChange={handleChange}
+              required
+              placeholder="Enter case title"
+            />
+          </div>
 
-        {/* Main Form */}
-        <div className="card">
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label className="form-label">Title *</label>
-              <input
-                type="text"
-                name="title"
-                className="form-input"
-                value={formData.title}
-                onChange={handleChange}
-                required
-              />
-            </div>
+          {/* 2. Clinical History (mandatory) */}
+          <div className="form-group">
+            <label className="form-label">
+              Clinical History <span style={{ color: '#d32f2f' }}>*</span>
+            </label>
+            <textarea
+              name="clinical_history"
+              className="form-textarea"
+              value={formData.clinical_history}
+              onChange={handleChange}
+              required
+              rows="5"
+              placeholder="Enter patient history, symptoms, and relevant medical background"
+            />
+          </div>
 
-            <div className="form-group">
-              <label className="form-label">Clinical History</label>
-              <textarea
-                name="clinical_history"
-                className="form-textarea"
-                value={formData.clinical_history}
-                onChange={handleChange}
-                rows="4"
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Findings</label>
-              <textarea
-                name="findings"
-                className="form-textarea"
-                value={formData.findings}
-                onChange={handleChange}
-                rows="4"
-                placeholder="Describe what you observe in the images..."
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Diagnosis</label>
-              <textarea
-                name="diagnosis"
-                className="form-textarea"
-                value={formData.diagnosis}
-                onChange={handleChange}
-                rows="3"
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Discussion Points</label>
-              <textarea
-                name="discussion_points"
-                className="form-textarea"
-                value={formData.discussion_points}
-                onChange={handleChange}
-                rows="4"
-              />
-            </div>
-
-            {/* Image Upload Section */}
-            <div className="form-group">
-              <label className="form-label">Images</label>
-              <div style={{
-                border: '2px dashed #ccc',
-                borderRadius: '8px',
-                padding: '20px',
-                textAlign: 'center',
-                backgroundColor: '#fafafa'
-              }}>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageSelect}
-                  style={{ display: 'none' }}
-                  id="image-upload"
-                  disabled={loading}
-                />
-                <label
-                  htmlFor="image-upload"
-                  style={{
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    opacity: loading ? 0.5 : 1
-                  }}
-                >
-                  <div style={{ fontSize: '48px', color: '#999' }}>📁</div>
-                  <p style={{ margin: '10px 0 5px', color: '#666', fontWeight: '500' }}>
-                    Click to select images
-                  </p>
-                  <p style={{ margin: 0, fontSize: '14px', color: '#999' }}>
-                    PNG or JPEG (max 5MB each)
-                  </p>
-                </label>
-              </div>
-              {imagePreviews.length > 0 && (
-                <p style={{ marginTop: '10px', fontSize: '14px', color: '#666' }}>
-                  {imagePreviews.length} image(s) selected
-                </p>
+          {/* 3. Image Upload Section */}
+          <div className="form-group">
+            <label className="form-label">
+              Images and Findings
+              {imagePreviews.filter(p => !p.isExisting).length > 0 && (
+                <span style={{ color: '#d32f2f' }}> * (findings required for each image)</span>
               )}
-            </div>
+            </label>
 
-            <div style={{ display: 'flex', gap: '10px', marginTop: '30px' }}>
-              <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? uploadProgress || 'Saving...' : 'Save Case'}
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/cases')}
-                className="btn btn-secondary"
+            {/* Upload Button */}
+            <div style={{
+              border: '2px dashed #1976d2',
+              borderRadius: '8px',
+              padding: '20px',
+              textAlign: 'center',
+              backgroundColor: '#f5f9ff',
+              marginBottom: imagePreviews.length > 0 ? '20px' : '0'
+            }}>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageSelect}
+                style={{ display: 'none' }}
+                id="image-upload"
                 disabled={loading}
+              />
+              <label
+                htmlFor="image-upload"
+                style={{
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.5 : 1
+                }}
               >
-                Cancel
-              </button>
+                <div style={{ fontSize: '48px', marginBottom: '10px' }}>🖼️</div>
+                <p style={{ margin: '10px 0 5px', color: '#1976d2', fontWeight: '600', fontSize: '16px' }}>
+                  Click to Upload Images
+                </p>
+                <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
+                  PNG or JPEG (max 5MB each)
+                </p>
+              </label>
             </div>
-          </form>
-        </div>
 
-        {/* Image Preview Sidebar */}
-        {imagePreviews.length > 0 && (
-          <div>
-            <div className="card" style={{ position: 'sticky', top: '20px', maxHeight: 'calc(100vh - 40px)', overflowY: 'auto' }}>
-              <h3 style={{ marginTop: 0 }}>Images ({imagePreviews.length})</h3>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            {/* Image Previews with Findings */}
+            {imagePreviews.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {imagePreviews.map((preview, index) => (
                   <div
                     key={index}
                     style={{
-                      border: '1px solid #e0e0e0',
+                      border: '2px solid #e0e0e0',
                       borderRadius: '8px',
-                      padding: '10px',
+                      overflow: 'hidden',
                       backgroundColor: '#fafafa'
                     }}
                   >
-                    <img
-                      src={preview.url}
-                      alt={preview.original_name}
-                      style={{
-                        width: '100%',
-                        height: '200px',
-                        objectFit: 'cover',
-                        borderRadius: '4px',
-                        marginBottom: '10px'
-                      }}
-                    />
-                    <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px', wordBreak: 'break-word' }}>
-                      {preview.original_name}
-                    </div>
-
-                    {!preview.isExisting && (
-                      <div style={{ marginBottom: '8px' }}>
-                        <input
-                          type="text"
-                          placeholder="Image description (optional)"
-                          value={preview.description}
-                          onChange={(e) => handleImageDescriptionChange(index, e.target.value)}
+                    <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '0' }}>
+                      {/* Image Preview */}
+                      <div style={{
+                        backgroundColor: '#000',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '10px'
+                      }}>
+                        <img
+                          src={preview.url}
+                          alt={preview.original_name}
                           style={{
-                            width: '100%',
-                            padding: '6px 8px',
-                            border: '1px solid #ddd',
-                            borderRadius: '4px',
-                            fontSize: '13px'
+                            maxWidth: '100%',
+                            maxHeight: '250px',
+                            objectFit: 'contain'
                           }}
-                          disabled={loading}
                         />
                       </div>
-                    )}
 
-                    {preview.isExisting && preview.description && (
-                      <div style={{ fontSize: '12px', color: '#666', fontStyle: 'italic', marginBottom: '8px' }}>
-                        {preview.description}
+                      {/* Findings Input */}
+                      <div style={{ padding: '20px', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{
+                          fontSize: '13px',
+                          color: '#666',
+                          marginBottom: '10px',
+                          fontWeight: '500'
+                        }}>
+                          Image {index + 1}: {preview.original_name}
+                        </div>
+
+                        <label style={{
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          marginBottom: '8px',
+                          color: '#424242'
+                        }}>
+                          Findings on this image
+                          {!preview.isExisting && <span style={{ color: '#d32f2f' }}> *</span>}
+                        </label>
+
+                        <textarea
+                          value={preview.findings}
+                          onChange={(e) => handleImageFindingsChange(index, e.target.value)}
+                          placeholder="Describe the findings visible in this image..."
+                          disabled={loading || preview.isExisting}
+                          required={!preview.isExisting}
+                          style={{
+                            width: '100%',
+                            padding: '10px',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '14px',
+                            fontFamily: 'inherit',
+                            resize: 'vertical',
+                            minHeight: '120px',
+                            lineHeight: '1.5',
+                            backgroundColor: preview.isExisting ? '#f5f5f5' : '#fff'
+                          }}
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(index)}
+                          disabled={loading}
+                          style={{
+                            marginTop: '10px',
+                            padding: '8px 16px',
+                            backgroundColor: '#f44336',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            fontSize: '13px',
+                            fontWeight: '500',
+                            opacity: loading ? 0.5 : 1,
+                            alignSelf: 'flex-start'
+                          }}
+                        >
+                          Remove Image
+                        </button>
                       </div>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveImage(index)}
-                      disabled={loading}
-                      style={{
-                        width: '100%',
-                        padding: '6px',
-                        backgroundColor: '#f44336',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: loading ? 'not-allowed' : 'pointer',
-                        fontSize: '13px',
-                        fontWeight: '500',
-                        opacity: loading ? 0.5 : 1
-                      }}
-                    >
-                      Remove
-                    </button>
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
+            )}
           </div>
-        )}
+
+          {/* 4. Discussion Points (mandatory) */}
+          <div className="form-group">
+            <label className="form-label">
+              Discussion Points <span style={{ color: '#d32f2f' }}>*</span>
+            </label>
+            <textarea
+              name="discussion_points"
+              className="form-textarea"
+              value={formData.discussion_points}
+              onChange={handleChange}
+              required
+              rows="5"
+              placeholder="Enter key discussion points, differential diagnoses, or teaching points"
+            />
+          </div>
+
+          {/* 5. Diagnosis (mandatory) */}
+          <div className="form-group">
+            <label className="form-label">
+              Diagnosis <span style={{ color: '#d32f2f' }}>*</span>
+            </label>
+            <textarea
+              name="diagnosis"
+              className="form-textarea"
+              value={formData.diagnosis}
+              onChange={handleChange}
+              required
+              rows="3"
+              placeholder="Enter the final diagnosis"
+            />
+          </div>
+
+          {/* Required Fields Notice */}
+          <div style={{
+            padding: '12px',
+            backgroundColor: '#fff3e0',
+            borderRadius: '6px',
+            fontSize: '13px',
+            color: '#e65100',
+            marginBottom: '20px'
+          }}>
+            <strong>Note:</strong> All fields marked with <span style={{ color: '#d32f2f' }}>*</span> are required.
+            {imagePreviews.filter(p => !p.isExisting).length > 0 && ' Each uploaded image must have findings documented.'}
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button type="submit" className="btn btn-primary" disabled={loading}>
+              {loading ? uploadProgress || 'Saving...' : 'Save Case'}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/cases')}
+              className="btn btn-secondary"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )

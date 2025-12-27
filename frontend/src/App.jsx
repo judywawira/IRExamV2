@@ -12,6 +12,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import CasesList from './pages/CasesList'
+import CaseView from './pages/CaseView'
 import CaseForm from './pages/CaseForm'
 import ExamsList from './pages/ExamsList'
 import ExamForm from './pages/ExamForm'
@@ -80,6 +81,12 @@ function App() {
         <Route path="/cases/new" element={
           <PrivateRoute>
             <CaseForm />
+          </PrivateRoute>
+        } />
+
+        <Route path="/cases/:id" element={
+          <PrivateRoute>
+            <CaseView />
           </PrivateRoute>
         } />
 
