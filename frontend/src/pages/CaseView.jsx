@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { casesAPI } from '../services/api'
+import { casesAPI, usersAPI } from '../services/api'
 
 // Helper function to construct image URL
 const getImageUrl = (img) => {
@@ -17,6 +17,7 @@ function CaseView() {
   const navigate = useNavigate()
   const { id } = useParams()
   const [caseData, setCaseData] = useState(null)
+  const [creatorName, setCreatorName] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -28,6 +29,17 @@ function CaseView() {
     try {
       const response = await casesAPI.get(id)
       setCaseData(response.data)
+
+      // Fetch creator information
+      if (response.data.created_by) {
+        try {
+          const userResponse = await usersAPI.get(response.data.created_by)
+          setCreatorName(userResponse.data.full_name || userResponse.data.email)
+        } catch (userError) {
+          console.error('Failed to load creator info:', userError)
+          setCreatorName('Unknown')
+        }
+      }
     } catch (error) {
       setError('Failed to load case')
       console.error(error)
@@ -84,9 +96,34 @@ function CaseView() {
       <div className="card">
         {/* Title */}
         <div style={{ marginBottom: '30px' }}>
-          <h2 style={{ margin: '0 0 5px 0', color: '#1976d2' }}>{caseData.title}</h2>
-          <div style={{ fontSize: '14px', color: '#999' }}>
-            Created on {new Date(caseData.created_at).toLocaleDateString()}
+          <h2 style={{ margin: '0 0 8px 0', color: '#1976d2' }}>{caseData.title}</h2>
+          <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', fontSize: '14px', color: '#666' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontWeight: '600', color: '#424242' }}>Created by:</span>
+              <span>{creatorName || 'Loading...'}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontWeight: '600', color: '#424242' }}>Created on:</span>
+              <span>{new Date(caseData.created_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}</span>
+            </div>
+            {caseData.updated_at && caseData.updated_at !== caseData.created_at && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontWeight: '600', color: '#424242' }}>Last updated:</span>
+                <span>{new Date(caseData.updated_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}</span>
+              </div>
+            )}
           </div>
         </div>
 

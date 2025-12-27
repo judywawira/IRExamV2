@@ -30,7 +30,9 @@ function ExamsList() {
     <div className="container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1>Exams</h1>
-        <Link to="/exams/new" className="btn btn-primary">Create Exam</Link>
+        <Link to="/exams/new" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+          Create Exam
+        </Link>
       </div>
 
       <div className="card">

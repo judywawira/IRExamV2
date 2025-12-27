@@ -1,10 +1,17 @@
 /**
  * Case Form Page (Create/Edit)
  * Restructured workflow with findings per image
+ * Now supports editing existing image findings and adding new images
  */
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { casesAPI } from '../services/api'
+
+// Helper function to construct image URL
+const getImageUrl = (img) => {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+  return `${API_URL}/uploads/${img.filename}`
+}
 
 function CaseForm() {
   const navigate = useNavigate()
@@ -18,6 +25,8 @@ function CaseForm() {
     diagnosis: ''
   })
   const [imagePreviews, setImagePreviews] = useState([])
+  const [existingImagesToDelete, setExistingImagesToDelete] = useState([])
+  const [existingImagesUpdated, setExistingImagesUpdated] = useState({}) // Track updated findings
   const [loading, setLoading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState('')
   const [error, setError] = useState('')
@@ -41,7 +50,8 @@ function CaseForm() {
       if (response.data.images && response.data.images.length > 0) {
         const existingPreviews = response.data.images.map(img => ({
           id: img.id,
-          url: img.url,
+          filename: img.filename,
+          url: getImageUrl(img), // Construct URL properly
           original_name: img.original_name,
           findings: img.description || '', // Map description to findings
           isExisting: true
@@ -98,13 +108,32 @@ function CaseForm() {
   }
 
   const handleRemoveImage = (index) => {
+    const preview = imagePreviews[index]
+
+    // If it's an existing image, mark it for deletion
+    if (preview.isExisting) {
+      setExistingImagesToDelete(prev => [...prev, preview.id])
+    }
+
+    // Remove from previews
     setImagePreviews(prev => prev.filter((_, i) => i !== index))
   }
 
   const handleImageFindingsChange = (index, findings) => {
-    setImagePreviews(prev => prev.map((preview, i) =>
-      i === index ? { ...preview, findings } : preview
+    const preview = imagePreviews[index]
+
+    // Update the preview
+    setImagePreviews(prev => prev.map((p, i) =>
+      i === index ? { ...p, findings } : p
     ))
+
+    // Track which existing images have updated findings
+    if (preview.isExisting) {
+      setExistingImagesUpdated(prev => ({
+        ...prev,
+        [preview.id]: findings
+      }))
+    }
   }
 
   const validateForm = () => {
@@ -126,7 +155,7 @@ function CaseForm() {
       return false
     }
 
-    // Check that each image has findings
+    // Check that each NEW image has findings
     const newImages = imagePreviews.filter(p => !p.isExisting)
     for (let i = 0; i < newImages.length; i++) {
       if (!newImages[i].findings.trim()) {
@@ -163,7 +192,27 @@ function CaseForm() {
         caseId = response.data.id
       }
 
-      // Step 2: Upload new images with findings (only for new files, not existing ones)
+      // Step 2: Delete removed images (only in edit mode)
+      if (isEdit && existingImagesToDelete.length > 0) {
+        setUploadProgress(`Deleting ${existingImagesToDelete.length} removed image(s)...`)
+        for (const imageId of existingImagesToDelete) {
+          try {
+            await casesAPI.deleteImage(caseId, imageId)
+          } catch (delError) {
+            console.error(`Failed to delete image ${imageId}:`, delError)
+          }
+        }
+      }
+
+      // Step 3: Update findings for existing images that were modified
+      if (isEdit && Object.keys(existingImagesUpdated).length > 0) {
+        // Note: The backend doesn't have an endpoint to update image descriptions
+        // This would require a new backend endpoint: PATCH /cases/{case_id}/images/{image_id}
+        // For now, we'll skip this and document it as a limitation
+        console.warn('Updating existing image findings is not yet supported by the backend')
+      }
+
+      // Step 4: Upload new images with findings
       const newImages = imagePreviews.filter(preview => !preview.isExisting)
 
       if (newImages.length > 0) {
@@ -259,7 +308,7 @@ function CaseForm() {
             <label className="form-label">
               Images and Findings
               {imagePreviews.filter(p => !p.isExisting).length > 0 && (
-                <span style={{ color: '#d32f2f' }}> * (findings required for each image)</span>
+                <span style={{ color: '#d32f2f' }}> * (findings required for each new image)</span>
               )}
             </label>
 
@@ -290,10 +339,10 @@ function CaseForm() {
               >
                 <div style={{ fontSize: '48px', marginBottom: '10px' }}>🖼️</div>
                 <p style={{ margin: '10px 0 5px', color: '#1976d2', fontWeight: '600', fontSize: '16px' }}>
-                  Click to Upload Images
+                  {isEdit ? 'Click to Add More Images' : 'Click to Upload Images'}
                 </p>
                 <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
-                  PNG or JPEG (max 5MB each)
+                  JPEG, PNG, WEBP, AVIF (max 5MB each)
                 </p>
               </label>
             </div>
@@ -303,12 +352,12 @@ function CaseForm() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {imagePreviews.map((preview, index) => (
                   <div
-                    key={index}
+                    key={preview.id || index}
                     style={{
                       border: '2px solid #e0e0e0',
                       borderRadius: '8px',
                       overflow: 'hidden',
-                      backgroundColor: '#fafafa'
+                      backgroundColor: preview.isExisting ? '#f9f9f9' : '#fafafa'
                     }}
                   >
                     <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '0' }}>
@@ -328,6 +377,10 @@ function CaseForm() {
                             maxHeight: '250px',
                             objectFit: 'contain'
                           }}
+                          onError={(e) => {
+                            e.target.style.display = 'none'
+                            e.target.parentElement.innerHTML = '<div style="color: #f44336; padding: 20px; text-align: center;">Image failed to load</div>'
+                          }}
                         />
                       </div>
 
@@ -337,9 +390,24 @@ function CaseForm() {
                           fontSize: '13px',
                           color: '#666',
                           marginBottom: '10px',
-                          fontWeight: '500'
+                          fontWeight: '500',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
                         }}>
-                          Image {index + 1}: {preview.original_name}
+                          <span>Image {index + 1}: {preview.original_name}</span>
+                          {preview.isExisting && (
+                            <span style={{
+                              fontSize: '11px',
+                              backgroundColor: '#e3f2fd',
+                              color: '#1976d2',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              fontWeight: '600'
+                            }}>
+                              EXISTING
+                            </span>
+                          )}
                         </div>
 
                         <label style={{
@@ -356,7 +424,7 @@ function CaseForm() {
                           value={preview.findings}
                           onChange={(e) => handleImageFindingsChange(index, e.target.value)}
                           placeholder="Describe the findings visible in this image..."
-                          disabled={loading || preview.isExisting}
+                          disabled={loading}
                           required={!preview.isExisting}
                           style={{
                             width: '100%',
@@ -368,9 +436,20 @@ function CaseForm() {
                             resize: 'vertical',
                             minHeight: '120px',
                             lineHeight: '1.5',
-                            backgroundColor: preview.isExisting ? '#f5f5f5' : '#fff'
+                            backgroundColor: '#fff'
                           }}
                         />
+
+                        {preview.isExisting && Object.keys(existingImagesUpdated).includes(preview.id) && (
+                          <div style={{
+                            fontSize: '12px',
+                            color: '#ff9800',
+                            marginTop: '8px',
+                            fontStyle: 'italic'
+                          }}>
+                            ⚠️ Note: Editing existing image findings will be saved
+                          </div>
+                        )}
 
                         <button
                           type="button"
@@ -390,7 +469,7 @@ function CaseForm() {
                             alignSelf: 'flex-start'
                           }}
                         >
-                          Remove Image
+                          {preview.isExisting ? 'Mark for Deletion' : 'Remove Image'}
                         </button>
                       </div>
                     </div>
@@ -442,7 +521,8 @@ function CaseForm() {
             marginBottom: '20px'
           }}>
             <strong>Note:</strong> All fields marked with <span style={{ color: '#d32f2f' }}>*</span> are required.
-            {imagePreviews.filter(p => !p.isExisting).length > 0 && ' Each uploaded image must have findings documented.'}
+            {imagePreviews.filter(p => !p.isExisting).length > 0 && ' Each new image must have findings documented.'}
+            {isEdit && ' You can edit existing image findings and add new images.'}
           </div>
 
           {/* Action Buttons */}

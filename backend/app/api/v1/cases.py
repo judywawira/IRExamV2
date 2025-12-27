@@ -209,11 +209,18 @@ async def upload_case_image(
             detail="Not authorized to modify this case"
         )
 
-    # Validate file type
-    if file.content_type not in ["image/jpeg", "image/png"]:
+    # Validate file type - Support common medical imaging formats
+    allowed_types = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+        "image/avif"
+    ]
+    if file.content_type not in allowed_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only JPEG and PNG images are allowed"
+            detail=f"Unsupported image format. Allowed: JPEG, PNG, WEBP, AVIF"
         )
 
     # Validate file size

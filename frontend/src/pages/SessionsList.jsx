@@ -42,7 +42,9 @@ function SessionsList() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1>Sessions</h1>
         {isExaminer() && (
-          <Link to="/sessions/new" className="btn btn-primary">Create Session</Link>
+          <Link to="/sessions/new" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+            Create Session
+          </Link>
         )}
       </div>
 
