@@ -61,7 +61,9 @@ function CasesList() {
     <div className="container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1>Cases</h1>
-        <Link to="/cases/new" className="btn btn-primary">Create Case</Link>
+        <Link to="/cases/new" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+          Create Case
+        </Link>
       </div>
 
       {/* Search Bar */}
@@ -137,14 +139,14 @@ function CasesList() {
                       <Link
                         to={`/cases/${c.id}`}
                         className="btn btn-sm btn-primary"
-                        style={{ fontSize: '13px' }}
+                        style={{ fontSize: '13px', textDecoration: 'none' }}
                       >
                         View
                       </Link>
                       <Link
                         to={`/cases/${c.id}/edit`}
                         className="btn btn-sm btn-secondary"
-                        style={{ fontSize: '13px' }}
+                        style={{ fontSize: '13px', textDecoration: 'none' }}
                       >
                         Edit
                       </Link>

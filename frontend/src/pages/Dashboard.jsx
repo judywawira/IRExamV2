@@ -223,7 +223,7 @@ function Dashboard() {
                     </span>
                   </td>
                   <td>
-                    <Link to={`/sessions/${session.id}`} className="btn btn-primary btn-sm">
+                    <Link to={`/sessions/${session.id}`} className="btn btn-primary btn-sm" style={{ textDecoration: 'none' }}>
                       {session.status === 'active' ? 'Join' : 'View'}
                     </Link>
                   </td>

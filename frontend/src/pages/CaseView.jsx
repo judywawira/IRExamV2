@@ -6,6 +6,13 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { casesAPI } from '../services/api'
 
+// Helper function to construct image URL
+const getImageUrl = (img) => {
+  // Use filename to construct the URL served by FastAPI's static files
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+  return `${API_URL}/uploads/${img.filename}`
+}
+
 function CaseView() {
   const navigate = useNavigate()
   const { id } = useParams()
@@ -47,7 +54,9 @@ function CaseView() {
       <div className="container">
         <div className="card">
           <p style={{ color: '#d32f2f' }}>{error || 'Case not found'}</p>
-          <Link to="/cases" className="btn btn-secondary">Back to Cases</Link>
+          <Link to="/cases" className="btn btn-secondary" style={{ textDecoration: 'none' }}>
+            Back to Cases
+          </Link>
         </div>
       </div>
     )
@@ -59,13 +68,13 @@ function CaseView() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1 style={{ margin: 0 }}>Case Preview</h1>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <Link to={`/cases/${id}/edit`} className="btn btn-primary">
+          <Link to={`/cases/${id}/edit`} className="btn btn-primary" style={{ textDecoration: 'none' }}>
             Edit Case
           </Link>
           <button onClick={handleDelete} className="btn btn-danger">
             Delete Case
           </button>
-          <Link to="/cases" className="btn btn-secondary">
+          <Link to="/cases" className="btn btn-secondary" style={{ textDecoration: 'none' }}>
             Back to List
           </Link>
         </div>
@@ -118,12 +127,16 @@ function CaseView() {
                     {/* Image */}
                     <div style={{ backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <img
-                        src={img.url}
+                        src={getImageUrl(img)}
                         alt={img.original_name || `Image ${index + 1}`}
                         style={{
                           maxWidth: '100%',
                           maxHeight: '400px',
                           objectFit: 'contain'
+                        }}
+                        onError={(e) => {
+                          e.target.style.display = 'none'
+                          e.target.parentElement.innerHTML = '<div style="color: #f44336; padding: 20px;">Image failed to load</div>'
                         }}
                       />
                     </div>
@@ -215,10 +228,10 @@ function CaseView() {
 
       {/* Bottom Actions */}
       <div style={{ display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'flex-end' }}>
-        <Link to={`/cases/${id}/edit`} className="btn btn-primary">
+        <Link to={`/cases/${id}/edit`} className="btn btn-primary" style={{ textDecoration: 'none' }}>
           Edit Case
         </Link>
-        <Link to="/cases" className="btn btn-secondary">
+        <Link to="/cases" className="btn btn-secondary" style={{ textDecoration: 'none' }}>
           Back to List
         </Link>
       </div>
