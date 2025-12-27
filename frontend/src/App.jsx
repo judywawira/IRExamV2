@@ -22,7 +22,7 @@ import SessionView from './pages/SessionView'
 import UsersList from './pages/UsersList'
 
 // Components
-import Navbar from './components/Navbar'
+import Sidebar from './components/Sidebar'
 import PrivateRoute from './components/PrivateRoute'
 
 function App() {
@@ -58,9 +58,11 @@ function App() {
 
   return (
     <BrowserRouter>
-      {authenticated && <Navbar />}
+      <div className="app-layout">
+        {authenticated && <Sidebar />}
 
-      <Routes>
+        <div className="main-content">
+          <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -140,7 +142,9 @@ function App() {
 
         {/* Catch all */}
         <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+          </Routes>
+        </div>
+      </div>
     </BrowserRouter>
   )
 }
