@@ -5,18 +5,15 @@ Implements SHA-256 pre-hashing + bcrypt for password storage
 from datetime import datetime, timedelta
 from typing import Optional
 import hashlib
+import bcrypt
 
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
 from app.core.config import settings
 from app.models.user import User
 
-
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
@@ -53,13 +50,16 @@ def hash_password(password: str) -> str:
     # Pre-hash with SHA-256 to handle any password length
     sha256_pass = sha256_hash(password)
 
-    # SHA-256 hex digest is exactly 64 chars, well under bcrypt's 72-byte limit
-    # This should never raise the 72-byte error
-    try:
-        return pwd_context.hash(sha256_pass)
-    except ValueError as e:
-        # This should never happen with SHA-256, but handle it gracefully
-        raise ValueError(f"Password hashing failed: {e}. SHA-256 digest length: {len(sha256_pass)}")
+    # Convert to bytes for bcrypt
+    password_bytes = sha256_pass.encode('utf-8')
+
+    # Use bcrypt directly (not passlib) to avoid version conflicts
+    # Generate salt and hash
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password_bytes, salt)
+
+    # Return as string for database storage
+    return hashed.decode('utf-8')
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -79,7 +79,13 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
         # Pre-hash the plain password the same way we did during hashing
         sha256_pass = sha256_hash(plain_password)
-        return pwd_context.verify(sha256_pass, hashed_password)
+
+        # Convert to bytes
+        password_bytes = sha256_pass.encode('utf-8')
+        hashed_bytes = hashed_password.encode('utf-8')
+
+        # Use bcrypt directly to verify
+        return bcrypt.checkpw(password_bytes, hashed_bytes)
     except Exception:
         # If verification fails for any reason, return False
         return False

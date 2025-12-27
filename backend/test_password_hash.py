@@ -3,7 +3,7 @@ Test script to verify password hashing works correctly
 Run: python test_password_hash.py
 """
 import hashlib
-from passlib.context import CryptContext
+import bcrypt
 
 # Test with different password lengths
 test_passwords = [
@@ -15,8 +15,6 @@ test_passwords = [
     "a" * 200,  # 200 chars (would definitely fail without SHA-256)
 ]
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def sha256_hash(password: str) -> str:
     """Pre-hash with SHA-256"""
@@ -24,16 +22,27 @@ def sha256_hash(password: str) -> str:
 
 
 def hash_password(password: str) -> str:
-    """Hash with SHA-256 + bcrypt"""
+    """Hash with SHA-256 + bcrypt (direct bcrypt, no passlib)"""
     sha256_pass = sha256_hash(password)
     print(f"  SHA-256 digest length: {len(sha256_pass)} chars")
-    return pwd_context.hash(sha256_pass)
+
+    # Convert to bytes
+    password_bytes = sha256_pass.encode('utf-8')
+    print(f"  SHA-256 digest bytes: {len(password_bytes)} bytes")
+
+    # Use bcrypt directly
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password_bytes, salt)
+
+    return hashed.decode('utf-8')
 
 
 def verify_password(plain: str, hashed: str) -> bool:
     """Verify password"""
     sha256_pass = sha256_hash(plain)
-    return pwd_context.verify(sha256_pass, hashed)
+    password_bytes = sha256_pass.encode('utf-8')
+    hashed_bytes = hashed.encode('utf-8')
+    return bcrypt.checkpw(password_bytes, hashed_bytes)
 
 
 print("Testing password hashing with SHA-256 + bcrypt\n")
