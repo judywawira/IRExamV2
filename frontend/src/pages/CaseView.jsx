@@ -30,6 +30,17 @@ function CaseView() {
       const response = await casesAPI.get(id)
       setCaseData(response.data)
 
+      // Debug: Log image data to console
+      console.log('Case data loaded:', response.data)
+      if (response.data.images && response.data.images.length > 0) {
+        console.log('Images with findings:', response.data.images.map(img => ({
+          filename: img.filename,
+          original_name: img.original_name,
+          description: img.description,
+          hasDescription: !!img.description
+        })))
+      }
+
       // Fetch creator information
       if (response.data.created_by) {
         try {
@@ -143,11 +154,11 @@ function CaseView() {
           </div>
         )}
 
-        {/* Images with Findings */}
+        {/* Media (Images/Videos) with Findings */}
         {caseData.images && caseData.images.length > 0 && (
           <div style={{ marginBottom: '30px' }}>
             <h3 style={{ fontSize: '18px', marginBottom: '15px', color: '#424242' }}>
-              Images and Findings ({caseData.images.length})
+              Media and Findings ({caseData.images.length})
             </h3>
             <div style={{ display: 'grid', gap: '20px' }}>
               {caseData.images.map((img, index) => (
@@ -161,30 +172,48 @@ function CaseView() {
                   }}
                 >
                   <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '0' }}>
-                    {/* Image */}
+                    {/* Media (Image or Video) */}
                     <div style={{ backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <img
-                        src={getImageUrl(img)}
-                        alt={img.original_name || `Image ${index + 1}`}
-                        style={{
-                          maxWidth: '100%',
-                          maxHeight: '400px',
-                          objectFit: 'contain'
-                        }}
-                        onError={(e) => {
-                          e.target.style.display = 'none'
-                          e.target.parentElement.innerHTML = '<div style="color: #f44336; padding: 20px;">Image failed to load</div>'
-                        }}
-                      />
+                      {img.mimetype && img.mimetype.startsWith('video/') ? (
+                        <video
+                          controls
+                          src={getImageUrl(img)}
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '400px',
+                            objectFit: 'contain'
+                          }}
+                          onError={(e) => {
+                            e.target.style.display = 'none'
+                            e.target.parentElement.innerHTML = '<div style="color: #f44336; padding: 20px; text-align: center;">Video failed to load</div>'
+                          }}
+                        >
+                          Your browser does not support video playback.
+                        </video>
+                      ) : (
+                        <img
+                          src={getImageUrl(img)}
+                          alt={img.original_name || `Image ${index + 1}`}
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '400px',
+                            objectFit: 'contain'
+                          }}
+                          onError={(e) => {
+                            e.target.style.display = 'none'
+                            e.target.parentElement.innerHTML = '<div style="color: #f44336; padding: 20px; text-align: center;">Image failed to load</div>'
+                          }}
+                        />
+                      )}
                     </div>
 
                     {/* Findings */}
                     <div style={{ padding: '20px' }}>
                       <div style={{ fontSize: '12px', color: '#999', marginBottom: '10px' }}>
-                        Image {index + 1}: {img.original_name}
+                        {img.mimetype && img.mimetype.startsWith('video/') ? 'Video' : 'Image'} {index + 1}: {img.original_name}
                       </div>
                       <h4 style={{ fontSize: '16px', marginBottom: '10px', color: '#424242' }}>
-                        Findings on this image
+                        Findings on this {img.mimetype && img.mimetype.startsWith('video/') ? 'video' : 'image'}
                       </h4>
                       <div style={{
                         padding: '12px',
@@ -194,8 +223,30 @@ function CaseView() {
                         lineHeight: '1.6',
                         whiteSpace: 'pre-wrap'
                       }}>
-                        {img.description || <em style={{ color: '#999' }}>No findings documented</em>}
+                        {img.description ? (
+                          <div>{img.description}</div>
+                        ) : (
+                          <div>
+                            <em style={{ color: '#999' }}>No findings documented</em>
+                            <div style={{ marginTop: '8px', fontSize: '11px', color: '#ff9800', fontStyle: 'normal' }}>
+                              Debug: description field = {JSON.stringify(img.description)}
+                            </div>
+                          </div>
+                        )}
                       </div>
+                      {/* Debug info - can be removed later */}
+                      <details style={{ marginTop: '10px', fontSize: '11px', color: '#666' }}>
+                        <summary style={{ cursor: 'pointer' }}>Debug Info</summary>
+                        <pre style={{ marginTop: '5px', padding: '8px', backgroundColor: '#f5f5f5', borderRadius: '4px', overflow: 'auto' }}>
+                          {JSON.stringify({
+                            id: img.id,
+                            filename: img.filename,
+                            description: img.description,
+                            hasDescription: !!img.description,
+                            allKeys: Object.keys(img)
+                          }, null, 2)}
+                        </pre>
+                      </details>
                     </div>
                   </div>
                 </div>

@@ -73,10 +73,13 @@ function CaseForm() {
   const handleImageSelect = (e) => {
     const files = Array.from(e.target.files)
 
-    // Validate file types
+    // Validate file types - Accept both images and videos
     const validFiles = files.filter(file => {
-      if (!file.type.startsWith('image/')) {
-        setError(`${file.name} is not an image file`)
+      const isImage = file.type.startsWith('image/')
+      const isVideo = file.type.startsWith('video/')
+
+      if (!isImage && !isVideo) {
+        setError(`${file.name} is not an image or video file`)
         return false
       }
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
@@ -97,7 +100,8 @@ function CaseForm() {
           url: reader.result,
           original_name: file.name,
           findings: '', // Initialize with empty findings
-          isExisting: false
+          isExisting: false,
+          isVideo: file.type.startsWith('video/')
         }])
       }
       reader.readAsDataURL(file)
@@ -323,7 +327,7 @@ function CaseForm() {
             }}>
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*"
                 multiple
                 onChange={handleImageSelect}
                 style={{ display: 'none' }}
@@ -337,12 +341,12 @@ function CaseForm() {
                   opacity: loading ? 0.5 : 1
                 }}
               >
-                <div style={{ fontSize: '48px', marginBottom: '10px' }}>🖼️</div>
+                <div style={{ fontSize: '48px', marginBottom: '10px' }}>🎬</div>
                 <p style={{ margin: '10px 0 5px', color: '#1976d2', fontWeight: '600', fontSize: '16px' }}>
-                  {isEdit ? 'Click to Add More Images' : 'Click to Upload Images'}
+                  {isEdit ? 'Click to Add More Media' : 'Click to Upload Media'}
                 </p>
                 <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
-                  JPEG, PNG, WEBP, AVIF (max 5MB each)
+                  Images: JPEG, PNG, WEBP, AVIF | Videos: MP4 (max 5MB each)
                 </p>
               </label>
             </div>
@@ -361,7 +365,7 @@ function CaseForm() {
                     }}
                   >
                     <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '0' }}>
-                      {/* Image Preview */}
+                      {/* Media Preview (Image or Video) */}
                       <div style={{
                         backgroundColor: '#000',
                         display: 'flex',
@@ -369,19 +373,37 @@ function CaseForm() {
                         justifyContent: 'center',
                         padding: '10px'
                       }}>
-                        <img
-                          src={preview.url}
-                          alt={preview.original_name}
-                          style={{
-                            maxWidth: '100%',
-                            maxHeight: '250px',
-                            objectFit: 'contain'
-                          }}
-                          onError={(e) => {
-                            e.target.style.display = 'none'
-                            e.target.parentElement.innerHTML = '<div style="color: #f44336; padding: 20px; text-align: center;">Image failed to load</div>'
-                          }}
-                        />
+                        {preview.isVideo ? (
+                          <video
+                            controls
+                            src={preview.url}
+                            style={{
+                              maxWidth: '100%',
+                              maxHeight: '250px',
+                              objectFit: 'contain'
+                            }}
+                            onError={(e) => {
+                              e.target.style.display = 'none'
+                              e.target.parentElement.innerHTML = '<div style="color: #f44336; padding: 20px; text-align: center;">Video failed to load</div>'
+                            }}
+                          >
+                            Your browser does not support video playback.
+                          </video>
+                        ) : (
+                          <img
+                            src={preview.url}
+                            alt={preview.original_name}
+                            style={{
+                              maxWidth: '100%',
+                              maxHeight: '250px',
+                              objectFit: 'contain'
+                            }}
+                            onError={(e) => {
+                              e.target.style.display = 'none'
+                              e.target.parentElement.innerHTML = '<div style="color: #f44336; padding: 20px; text-align: center;">Image failed to load</div>'
+                            }}
+                          />
+                        )}
                       </div>
 
                       {/* Findings Input */}
