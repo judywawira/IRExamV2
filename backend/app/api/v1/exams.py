@@ -20,13 +20,21 @@ async def convert_exam_to_response(exam: Exam) -> ExamResponse:
     """Helper to convert Exam model to response schema"""
     await exam.fetch_all_links()
 
+    # Handle Beanie Link for created_by
+    if hasattr(exam.created_by, 'ref'):
+        created_by_id = str(exam.created_by.ref.id)
+    elif hasattr(exam.created_by, 'id'):
+        created_by_id = str(exam.created_by.id)
+    else:
+        created_by_id = str(exam.created_by)
+
     return ExamResponse(
         id=str(exam.id),
         title=exam.title,
         description=exam.description,
         duration_minutes=exam.duration_minutes,
         case_ids=[str(case.id) for case in exam.cases],
-        created_by=str(exam.created_by.ref.id),
+        created_by=created_by_id,
         created_at=exam.created_at,
         updated_at=exam.updated_at,
         is_archived=exam.is_archived

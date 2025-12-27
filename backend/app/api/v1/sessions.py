@@ -20,12 +20,21 @@ async def convert_session_to_response(session: Session) -> SessionResponse:
     """Helper to convert Session model to response schema"""
     await session.fetch_all_links()
 
+    # Helper function to safely extract ID from Link or object
+    def get_id(obj):
+        if hasattr(obj, 'ref'):
+            return str(obj.ref.id)
+        elif hasattr(obj, 'id'):
+            return str(obj.id)
+        else:
+            return str(obj)
+
     return SessionResponse(
         id=str(session.id),
         name=session.name,
-        exam_id=str(session.exam.ref.id),
-        examiner_id=str(session.examiner.ref.id),
-        student_ids=[str(s.ref.id) for s in session.students],
+        exam_id=get_id(session.exam),
+        examiner_id=get_id(session.examiner),
+        student_ids=[get_id(s) for s in session.students],
         status=session.status,
         current_case_index=session.current_case_index,
         current_image_index=session.current_image_index,

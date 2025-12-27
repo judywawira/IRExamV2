@@ -80,6 +80,16 @@ async def disconnect(sid):
         print(f"🔌 Client disconnected: {sid}")
 
 
+def get_link_id(obj):
+    """Helper to safely extract ID from Beanie Link or object"""
+    if hasattr(obj, 'ref'):
+        return str(obj.ref.id)
+    elif hasattr(obj, 'id'):
+        return str(obj.id)
+    else:
+        return str(obj)
+
+
 @sio.event
 async def join_room(sid, data):
     """Join a session room"""
@@ -102,12 +112,12 @@ async def join_room(sid, data):
     # Check authorization
     if user_role == 'student':
         # Students must be assigned to the session
-        student_ids = [str(s.ref.id) for s in session.students]
+        student_ids = [get_link_id(s) for s in session.students]
         if user_id not in student_ids:
             return {'error': 'Not authorized for this session'}
     elif user_role == 'examiner':
         # Must be the session examiner
-        if str(session.examiner.ref.id) != user_id:
+        if get_link_id(session.examiner) != user_id:
             return {'error': 'Not authorized for this session'}
 
     # Join the room

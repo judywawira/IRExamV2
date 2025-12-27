@@ -27,6 +27,17 @@ router = APIRouter()
 
 def convert_case_to_response(case: Case) -> CaseResponse:
     """Helper to convert Case model to response schema"""
+    # Handle Beanie Link - can be User object or Link reference
+    if hasattr(case.created_by, 'ref'):
+        # Already a Link with ref
+        created_by_id = str(case.created_by.ref.id)
+    elif hasattr(case.created_by, 'id'):
+        # Direct User object
+        created_by_id = str(case.created_by.id)
+    else:
+        # Fallback - convert to string
+        created_by_id = str(case.created_by)
+
     return CaseResponse(
         id=str(case.id),
         title=case.title,
@@ -42,7 +53,7 @@ def convert_case_to_response(case: Case) -> CaseResponse:
             CaseAnnotationResponse(**ann.dict())
             for ann in case.annotations
         ],
-        created_by=str(case.created_by.ref.id),
+        created_by=created_by_id,
         created_at=case.created_at,
         updated_at=case.updated_at
     )
