@@ -607,7 +607,101 @@ backend/tests/
 
 ---
 
-## 11. Lessons Learned
+## 11. UI/UX Enhancements
+
+### 11.1 Dashboard Visual Improvements
+
+**Decision:** Make entire dashboard tiles clickable with proper spacing and hover effects.
+
+**Rationale:**
+- Previous implementation had overlapping "Manage" text
+- Users expect entire card to be clickable (not just small link)
+- Better visual hierarchy with consistent spacing
+- Hover effects provide clear interactive feedback
+
+**Implementation:**
+- Wrapped entire card in `<Link>` component
+- Increased card padding from default to 30px
+- Added flexbox with `justifyContent: 'space-between'`
+- Implemented hover transform and shadow effects
+- Set minimum card width to 220px for better grid layout
+
+**Date:** 2025-12-27
+
+**Status:** ✅ Implemented
+
+---
+
+### 11.2 Enhanced Case Creation Workflow
+
+**Decision:** Allow image upload during case creation with live previews.
+
+**Rationale:**
+- Original workflow required saving case before uploading images
+- Clinicians need to see images while documenting findings and diagnosis
+- Poor UX to switch between form and separate image upload page
+- Difficult to write accurate findings without visual reference
+
+**Implementation Details:**
+1. **Two-Column Layout:**
+   - Left: Case form (title, clinical history, findings, diagnosis, discussion points)
+   - Right: Image preview sidebar (sticky, scrollable)
+   - Grid adapts: single column when no images, two-column when images present
+
+2. **Image Selection:**
+   - Drag-and-drop style file input with clear visual indicator
+   - Multiple file selection support
+   - Client-side validation (image types, 5MB limit per file)
+   - FileReader API for instant previews
+
+3. **Image Preview Features:**
+   - 200px height thumbnail with proper object-fit
+   - Filename display
+   - Optional description input for each image
+   - Remove button for each image
+   - Counter showing total images selected
+
+4. **Save Workflow:**
+   - Step 1: Create/update case (text fields)
+   - Step 2: Upload images sequentially with progress indicator
+   - Shows: "Creating case..." → "Uploading image 1 of 3..." → "Complete!"
+   - Error handling: continues with other uploads if one fails
+   - 500ms delay after completion before navigation (user feedback)
+
+5. **Edit Mode Support:**
+   - Loads existing images with descriptions
+   - Distinguishes between existing and new images
+   - Can add new images to existing case
+   - Remove button works for both existing and new images
+
+**Alternatives Considered:**
+- **Multi-step wizard**: More complex, requires state persistence between steps
+- **Backend support for draft cases**: Would require API changes, overkill for this use case
+- **Cloud upload before save**: Privacy concerns, orphaned files if user cancels
+
+**Trade-offs:**
+- Case is created before images upload (minor) - acceptable because it's atomic to user
+- Images uploaded sequentially not in parallel - simpler error handling, progress tracking
+- No drag-and-drop reordering - can be added later if needed
+
+**Benefits:**
+✅ Clinicians see images while writing findings
+✅ Better workflow matches clinical documentation process
+✅ Clear progress feedback during multi-image upload
+✅ Works for both create and edit modes
+✅ Graceful error handling per image
+
+**Date:** 2025-12-27
+
+**Status:** ✅ Implemented
+
+**Files Modified:**
+- `frontend/src/pages/CaseForm.jsx` (150 → 410 lines)
+- `frontend/src/pages/Dashboard.jsx`
+
+---
+
+## 12. Lessons Learned
 
 ### What Worked Well
 ✅ FastAPI's automatic validation caught bugs early
@@ -627,7 +721,7 @@ backend/tests/
 
 ---
 
-## 12. Decision Log Summary
+## 13. Decision Log Summary
 
 | # | Decision | Date | Status |
 |---|----------|------|--------|
@@ -648,9 +742,11 @@ backend/tests/
 | 15 | pytest for testing | 2025-11-22 | 🚧 In Progress |
 | 16 | Docker deployment | 2025-11-22 | ⏳ Planned |
 | 17 | DICOM support | 2025-11-22 | ❌ Deferred |
+| 18 | Dashboard UX improvements | 2025-12-27 | ✅ Implemented |
+| 19 | Case creation image workflow | 2025-12-27 | ✅ Implemented |
 
 ---
 
-**Document Version:** 1.0
-**Last Updated:** 2025-11-22
+**Document Version:** 1.1
+**Last Updated:** 2025-12-27
 **Next Review:** After first production deployment

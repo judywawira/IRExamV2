@@ -58,44 +58,141 @@ function Dashboard() {
         Role: <strong>{user.role}</strong>
       </p>
 
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+      {/* Stats Cards */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: '20px',
+        marginBottom: '30px'
+      }}>
         {isExaminer() && (
           <>
-            <div className="card" style={{ textAlign: 'center' }}>
-              <h3 style={{ fontSize: '36px', margin: '0' }}>{stats.cases}</h3>
-              <p style={{ color: '#666' }}>Cases</p>
-              <Link to="/cases" className="btn btn-primary" style={{ marginTop: '10px' }}>
-                Manage Cases
-              </Link>
-            </div>
+            <Link to="/cases" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div className="card" style={{
+                textAlign: 'center',
+                padding: '30px 20px',
+                cursor: 'pointer',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)'
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)'
+              }}>
+                <div>
+                  <h3 style={{ fontSize: '48px', margin: '0 0 10px 0', color: '#007bff' }}>
+                    {stats.cases}
+                  </h3>
+                  <p style={{ color: '#666', fontSize: '16px', margin: '0 0 15px 0' }}>Cases</p>
+                </div>
+                <div className="btn btn-primary" style={{ marginTop: '15px', display: 'inline-block' }}>
+                  Manage Cases
+                </div>
+              </div>
+            </Link>
 
-            <div className="card" style={{ textAlign: 'center' }}>
-              <h3 style={{ fontSize: '36px', margin: '0' }}>{stats.exams}</h3>
-              <p style={{ color: '#666' }}>Exams</p>
-              <Link to="/exams" className="btn btn-primary" style={{ marginTop: '10px' }}>
-                Manage Exams
-              </Link>
-            </div>
+            <Link to="/exams" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div className="card" style={{
+                textAlign: 'center',
+                padding: '30px 20px',
+                cursor: 'pointer',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)'
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)'
+              }}>
+                <div>
+                  <h3 style={{ fontSize: '48px', margin: '0 0 10px 0', color: '#28a745' }}>
+                    {stats.exams}
+                  </h3>
+                  <p style={{ color: '#666', fontSize: '16px', margin: '0 0 15px 0' }}>Exams</p>
+                </div>
+                <div className="btn btn-success" style={{ marginTop: '15px', display: 'inline-block' }}>
+                  Manage Exams
+                </div>
+              </div>
+            </Link>
           </>
         )}
 
-        <div className="card" style={{ textAlign: 'center' }}>
-          <h3 style={{ fontSize: '36px', margin: '0' }}>{stats.sessions}</h3>
-          <p style={{ color: '#666' }}>Sessions</p>
-          <Link to="/sessions" className="btn btn-primary" style={{ marginTop: '10px' }}>
-            View Sessions
-          </Link>
-        </div>
+        <Link to="/sessions" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <div className="card" style={{
+            textAlign: 'center',
+            padding: '30px 20px',
+            cursor: 'pointer',
+            transition: 'transform 0.2s, box-shadow 0.2s',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)'
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)'
+            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)'
+          }}>
+            <div>
+              <h3 style={{ fontSize: '48px', margin: '0 0 10px 0', color: '#17a2b8' }}>
+                {stats.sessions}
+              </h3>
+              <p style={{ color: '#666', fontSize: '16px', margin: '0 0 15px 0' }}>Sessions</p>
+            </div>
+            <div className="btn btn-primary" style={{ marginTop: '15px', display: 'inline-block' }}>
+              View Sessions
+            </div>
+          </div>
+        </Link>
 
         {isAdmin() && (
-          <div className="card" style={{ textAlign: 'center' }}>
-            <h3 style={{ fontSize: '36px', margin: '0' }}>👥</h3>
-            <p style={{ color: '#666' }}>User Management</p>
-            <Link to="/users" className="btn btn-primary" style={{ marginTop: '10px' }}>
-              Manage Users
-            </Link>
-          </div>
+          <Link to="/users" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <div className="card" style={{
+              textAlign: 'center',
+              padding: '30px 20px',
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <div>
+                <h3 style={{ fontSize: '48px', margin: '0 0 10px 0' }}>👥</h3>
+                <p style={{ color: '#666', fontSize: '16px', margin: '0 0 15px 0' }}>
+                  User Management
+                </p>
+              </div>
+              <div className="btn btn-secondary" style={{ marginTop: '15px', display: 'inline-block' }}>
+                Manage Users
+              </div>
+            </div>
+          </Link>
         )}
       </div>
 
