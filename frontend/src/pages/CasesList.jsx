@@ -1,6 +1,6 @@
 /**
  * Cases List Page
- * Enhanced with search and preview functionality
+ * Modern table design with search functionality
  */
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -45,7 +45,7 @@ function CasesList() {
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this case?')) return
+    if (!confirm('Are you sure you want to delete this case? This action cannot be undone.')) return
 
     try {
       await casesAPI.delete(id)
@@ -55,107 +55,145 @@ function CasesList() {
     }
   }
 
-  if (loading) return <div className="loading">Loading...</div>
+  if (loading) {
+    return (
+      <div className="container">
+        <div className="loading">Loading cases...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1>Cases</h1>
-        <Link to="/cases/new" className="btn btn-primary" style={{ textDecoration: 'none' }}>
-          Create Case
+      {/* Page Header */}
+      <div className="flex justify-between items-center" style={{ marginBottom: 'var(--spacing-2xl)' }}>
+        <div>
+          <h1 className="page-title">Case Management</h1>
+          <p className="page-subtitle">
+            Browse and manage all medical imaging cases
+          </p>
+        </div>
+        <Link to="/cases/new" className="btn btn-primary">
+          + Create Case
         </Link>
       </div>
 
       {/* Search Bar */}
-      <div className="card" style={{ marginBottom: '20px' }}>
-        <div className="form-group" style={{ margin: 0 }}>
-          <input
-            type="text"
-            placeholder="Search cases by title, clinical history, diagnosis, or findings..."
-            className="form-input"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              padding: '12px 16px',
-              fontSize: '15px',
-              border: '2px solid #e0e0e0',
-              borderRadius: '8px',
-              width: '100%'
-            }}
-          />
-        </div>
-        {searchTerm && (
-          <div style={{ marginTop: '10px', fontSize: '14px', color: '#666' }}>
-            Found {filteredCases.length} case{filteredCases.length !== 1 ? 's' : ''}
-            {filteredCases.length < cases.length && ` (filtered from ${cases.length} total)`}
-          </div>
-        )}
+      <div className="search-input-wrapper">
+        <span className="search-icon">🔍</span>
+        <input
+          type="text"
+          placeholder="Search cases by title, clinical history, diagnosis, or findings..."
+          className="search-input"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
+      {searchTerm && (
+        <div style={{
+          marginBottom: 'var(--spacing-lg)',
+          fontSize: 'var(--font-size-sm)',
+          color: 'var(--color-text-secondary)'
+        }}>
+          Found {filteredCases.length} case{filteredCases.length !== 1 ? 's' : ''}
+          {filteredCases.length < cases.length && ` (filtered from ${cases.length} total)`}
+        </div>
+      )}
+
+      {/* Cases Table */}
       {filteredCases.length === 0 ? (
         <div className="card">
-          <p>
-            {searchTerm
-              ? `No cases found matching "${searchTerm}"`
-              : 'No cases found. Create your first case!'}
-          </p>
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              className="btn btn-secondary"
-              style={{ marginTop: '10px' }}
-            >
-              Clear Search
-            </button>
-          )}
+          <div style={{
+            textAlign: 'center',
+            padding: 'var(--spacing-3xl)',
+            color: 'var(--color-text-secondary)'
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: 'var(--spacing-md)' }}>📁</div>
+            <p style={{ marginBottom: 'var(--spacing-lg)' }}>
+              {searchTerm
+                ? `No cases found matching "${searchTerm}"`
+                : 'No cases found. Create your first case to get started!'}
+            </p>
+            {searchTerm ? (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="btn btn-secondary"
+              >
+                Clear Search
+              </button>
+            ) : (
+              <Link to="/cases/new" className="btn btn-primary">
+                + Create First Case
+              </Link>
+            )}
+          </div>
         </div>
       ) : (
-        <div className="card">
+        <div className="table-container">
           <table className="table">
             <thead>
               <tr>
-                <th>Title</th>
-                <th>Images</th>
-                <th>Created</th>
-                <th style={{ minWidth: '200px' }}>Actions</th>
+                <th>Case Title</th>
+                <th>Media Files</th>
+                <th>Created Date</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredCases.map(c => (
                 <tr key={c.id}>
                   <td>
-                    <div style={{ fontWeight: '500' }}>{c.title}</div>
+                    <div style={{ fontWeight: 'var(--font-weight-medium)', marginBottom: '4px' }}>
+                      {c.title}
+                    </div>
                     {c.clinical_history && (
-                      <div style={{ fontSize: '13px', color: '#666', marginTop: '4px' }}>
-                        {c.clinical_history.substring(0, 60)}
-                        {c.clinical_history.length > 60 ? '...' : ''}
+                      <div style={{
+                        fontSize: 'var(--font-size-xs)',
+                        color: 'var(--color-text-secondary)',
+                        lineHeight: '1.4'
+                      }}>
+                        {c.clinical_history.substring(0, 80)}
+                        {c.clinical_history.length > 80 ? '...' : ''}
                       </div>
                     )}
                   </td>
-                  <td>{c.images?.length || 0}</td>
-                  <td>{new Date(c.created_at).toLocaleDateString()}</td>
                   <td>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <span className="badge badge-neutral">
+                      {c.images?.length || 0} file{c.images?.length !== 1 ? 's' : ''}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ fontSize: 'var(--font-size-sm)' }}>
+                      {new Date(c.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </div>
+                  </td>
+                  <td>
+                    <div className="table-actions" style={{ justifyContent: 'flex-end' }}>
                       <Link
                         to={`/cases/${c.id}`}
-                        className="btn btn-sm btn-primary"
-                        style={{ fontSize: '13px', textDecoration: 'none' }}
+                        className="btn btn-sm btn-secondary"
+                        title="View case"
                       >
-                        View
+                        👁 View
                       </Link>
                       <Link
                         to={`/cases/${c.id}/edit`}
                         className="btn btn-sm btn-secondary"
-                        style={{ fontSize: '13px', textDecoration: 'none' }}
+                        title="Edit case"
                       >
-                        Edit
+                        ✏️ Edit
                       </Link>
                       <button
                         onClick={() => handleDelete(c.id)}
                         className="btn btn-sm btn-danger"
-                        style={{ fontSize: '13px' }}
+                        title="Delete case"
                       >
-                        Delete
+                        🗑️ Delete
                       </button>
                     </div>
                   </td>
