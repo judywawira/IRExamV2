@@ -182,7 +182,7 @@ function SessionForm() {
                 <option value="">-- Select an exam --</option>
                 {availableExams.map(exam => (
                   <option key={exam.id} value={exam.id}>
-                    {exam.title} ({exam.duration_minutes} min, {exam.case_ids?.length || 0} cases)
+                    {exam.title} ({exam.duration_minutes ? `${exam.duration_minutes} min` : 'No limit'}, {exam.case_ids?.length || 0} cases)
                   </option>
                 ))}
               </select>

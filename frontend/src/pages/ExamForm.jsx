@@ -14,7 +14,7 @@ function ExamForm() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    duration_minutes: 60
+    duration_minutes: ''
   })
   const [selectedCaseIds, setSelectedCaseIds] = useState([])
   const [availableCases, setAvailableCases] = useState([])
@@ -47,7 +47,7 @@ function ExamForm() {
       setFormData({
         title: response.data.title,
         description: response.data.description || '',
-        duration_minutes: response.data.duration_minutes
+        duration_minutes: response.data.duration_minutes || ''
       })
       setSelectedCaseIds(response.data.case_ids || [])
     } catch (error) {
@@ -60,7 +60,7 @@ function ExamForm() {
     const { name, value } = e.target
     setFormData({
       ...formData,
-      [name]: name === 'duration_minutes' ? parseInt(value) || 0 : value
+      [name]: name === 'duration_minutes' ? (value === '' ? '' : parseInt(value) || 0) : value
     })
   }
 
@@ -77,9 +77,13 @@ function ExamForm() {
       setError('Title is required')
       return false
     }
-    if (formData.duration_minutes <= 0 || formData.duration_minutes > 480) {
-      setError('Duration must be between 1 and 480 minutes')
-      return false
+    // Duration is optional, but if provided must be valid
+    if (formData.duration_minutes !== '' && formData.duration_minutes !== null) {
+      const duration = Number(formData.duration_minutes)
+      if (isNaN(duration) || duration <= 0 || duration > 480) {
+        setError('Duration must be between 1 and 480 minutes')
+        return false
+      }
     }
     if (selectedCaseIds.length === 0) {
       setError('Please select at least one case')
@@ -101,6 +105,7 @@ function ExamForm() {
     try {
       const payload = {
         ...formData,
+        duration_minutes: formData.duration_minutes === '' ? null : formData.duration_minutes,
         case_ids: selectedCaseIds
       }
 
@@ -168,7 +173,7 @@ function ExamForm() {
           {/* Duration */}
           <div className="form-group">
             <label className="form-label">
-              Duration (minutes) <span style={{ color: '#d32f2f' }}>*</span>
+              Duration (minutes)
             </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
               <input
@@ -177,17 +182,19 @@ function ExamForm() {
                 className="form-input"
                 value={formData.duration_minutes}
                 onChange={handleChange}
-                required
                 min="1"
                 max="480"
-                style={{ maxWidth: '150px', fontSize: '15px' }}
+                placeholder="Leave empty for no time limit"
+                style={{ maxWidth: '250px', fontSize: '15px' }}
               />
-              <span style={{ color: '#666', fontSize: '14px' }}>
-                ({Math.floor(formData.duration_minutes / 60)}h {formData.duration_minutes % 60}m)
-              </span>
+              {formData.duration_minutes && (
+                <span style={{ color: '#666', fontSize: '14px' }}>
+                  ({Math.floor(formData.duration_minutes / 60)}h {formData.duration_minutes % 60}m)
+                </span>
+              )}
             </div>
             <div style={{ fontSize: '13px', color: '#666', marginTop: '5px' }}>
-              Maximum: 480 minutes (8 hours)
+              Optional - Leave empty for no time limit. Maximum: 480 minutes (8 hours)
             </div>
           </div>
 

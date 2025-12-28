@@ -109,7 +109,7 @@ function ExamsList() {
                   </td>
                   <td>
                     <span className="badge badge-info">
-                      {exam.duration_minutes} min
+                      {exam.duration_minutes ? `${exam.duration_minutes} min` : 'No limit'}
                     </span>
                   </td>
                   <td>

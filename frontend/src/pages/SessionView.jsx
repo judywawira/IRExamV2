@@ -294,7 +294,7 @@ function SessionView() {
             fontSize: '28px',
             fontWeight: 'var(--font-weight-bold)',
             fontFamily: 'monospace',
-            color: timeRemaining < 300 ? 'var(--color-error)' : '#fff'
+            color: timeRemaining !== null && timeRemaining < 300 ? 'var(--color-error)' : '#fff'
           }}>
             {formatTime(timeRemaining)}
           </div>

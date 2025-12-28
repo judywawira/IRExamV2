@@ -13,7 +13,7 @@ class Exam(Document):
 
     title: str
     description: Optional[str] = None
-    duration_minutes: int  # Exam duration in minutes
+    duration_minutes: Optional[int] = None  # Exam duration in minutes (optional, null = no time limit)
     cases: List[Link["Case"]] = []  # References to Case documents
 
     created_by: Link["User"]
