@@ -102,8 +102,9 @@ async def join_room(sid, data):
         return {'error': 'session_id required'}
 
     # Verify user has access to this session
-    session = await Session.find_one(Session.id == session_id)
+    session = await Session.get(session_id)
     if not session:
+        print(f"❌ join_room: Session not found: {session_id}")
         return {'error': 'Session not found'}
 
     user_id = session_data['user_id']
@@ -148,8 +149,9 @@ async def request_sync(sid, data):
     if not session_id:
         return {'error': 'session_id required'}
 
-    session = await Session.find_one(Session.id == session_id)
+    session = await Session.get(session_id)
     if not session:
+        print(f"❌ request_sync: Session not found: {session_id}")
         return {'error': 'Session not found'}
 
     # Fetch full exam data
@@ -186,9 +188,17 @@ async def cmd_start(sid, data):
         return {'error': 'Unauthorized'}
 
     session_id = data.get('session_id')
-    session = await Session.find_one(Session.id == session_id)
+    if not session_id:
+        print(f"❌ cmd_start: No session_id provided")
+        return {'error': 'session_id required'}
+
+    print(f"🔍 cmd_start: Looking up session {session_id}")
+    session = await Session.get(session_id)
     if not session:
+        print(f"❌ cmd_start: Session not found: {session_id}")
         return {'error': 'Session not found'}
+
+    print(f"✅ cmd_start: Session found: {session_id}, status: {session.status}")
 
     # Start the session
     session.status = 'active'
@@ -216,8 +226,9 @@ async def cmd_pause(sid, data):
         return {'error': 'Unauthorized'}
 
     session_id = data.get('session_id')
-    session = await Session.find_one(Session.id == session_id)
+    session = await Session.get(session_id)
     if not session:
+        print(f"❌ cmd_pause: Session not found: {session_id}")
         return {'error': 'Session not found'}
 
     session.status = 'paused'
@@ -244,8 +255,11 @@ async def cmd_resume(sid, data):
         return {'error': 'Unauthorized'}
 
     session_id = data.get('session_id')
-    session = await Session.find_one(Session.id == session_id)
-    if not session or session.status != 'paused':
+    session = await Session.get(session_id)
+    if not session:
+        print(f"❌ cmd_resume: Session not found: {session_id}")
+        return {'error': 'Session not found'}
+    if session.status != 'paused':
         return {'error': 'Cannot resume'}
 
     # Calculate pause duration
@@ -284,8 +298,9 @@ async def cmd_nav(sid, data):
     if case_idx is None or img_idx is None:
         return {'error': 'case_index and image_index required'}
 
-    session = await Session.find_one(Session.id == session_id)
+    session = await Session.get(session_id)
     if not session:
+        print(f"❌ cmd_nav: Session not found: {session_id}")
         return {'error': 'Session not found'}
 
     # Update navigation state
@@ -314,8 +329,9 @@ async def cmd_end(sid, data):
         return {'error': 'Unauthorized'}
 
     session_id = data.get('session_id')
-    session = await Session.find_one(Session.id == session_id)
+    session = await Session.get(session_id)
     if not session:
+        print(f"❌ cmd_end: Session not found: {session_id}")
         return {'error': 'Session not found'}
 
     session.status = 'completed'
@@ -392,14 +408,17 @@ async def timer_heartbeat_task():
         for session in active_sessions:
             time_elapsed = session.get_current_time_elapsed()
             await session.fetch_all_links()
-            duration_seconds = session.exam.duration_minutes * 60
-            seconds_remaining = max(0, duration_seconds - time_elapsed)
 
-            room_name = f"session_{str(session.id)}"
-            await sio.emit('timer_sync', {
-                'seconds_remaining': seconds_remaining,
-                'time_elapsed': time_elapsed
-            }, room=room_name)
+            # Only send timer sync if exam has a duration limit
+            if session.exam.duration_minutes:
+                duration_seconds = session.exam.duration_minutes * 60
+                seconds_remaining = max(0, duration_seconds - time_elapsed)
+
+                room_name = f"session_{str(session.id)}"
+                await sio.emit('timer_sync', {
+                    'seconds_remaining': seconds_remaining,
+                    'time_elapsed': time_elapsed
+                }, room=room_name)
 
 
 # Start heartbeat task when server starts
