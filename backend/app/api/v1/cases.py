@@ -2,7 +2,7 @@
 Case Management API Endpoints
 CRUD operations for medical cases with image upload
 """
-from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, File
+from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, File, Form
 from typing import List
 import os
 import uuid
@@ -190,10 +190,10 @@ async def delete_case(
 async def upload_case_image(
     case_id: str,
     file: UploadFile = File(...),
-    description: str = None,
+    description: str = Form(None),
     current_user: User = Depends(verify_examiner)
 ):
-    """Upload image to case"""
+    """Upload image to case with optional findings/description"""
     case = await Case.get(case_id)
 
     if not case:
