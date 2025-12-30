@@ -334,6 +334,83 @@ function SessionView() {
 
       {/* Main Content */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        {/* Left Sidebar - Case Grid Navigation */}
+        {isExaminer && (
+          <div style={{
+            width: '240px',
+            background: 'var(--sidebar-bg)',
+            borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+            padding: 'var(--spacing-md)',
+            overflowY: 'auto'
+          }}>
+            <h4 style={{
+              fontSize: 'var(--font-size-sm)',
+              color: 'var(--sidebar-text)',
+              marginBottom: 'var(--spacing-md)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              padding: '0 var(--spacing-sm)'
+            }}>
+              Cases ({cases.length})
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+              {cases.map((caseItem, idx) => (
+                <div
+                  key={caseItem.id}
+                  onClick={() => handleNavigate(idx, 0)}
+                  style={{
+                    padding: 'var(--spacing-md)',
+                    background: idx === currentCaseIndex ? 'var(--color-primary)' : 'rgba(255, 255, 255, 0.05)',
+                    border: idx === currentCaseIndex ? '2px solid var(--color-primary)' : '2px solid transparent',
+                    borderRadius: 'var(--radius-md)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      background: idx === currentCaseIndex ? 'var(--color-primary)' : 'rgba(255, 255, 255, 0.1)'
+                    }
+                  }}
+                  onMouseEnter={(e) => {
+                    if (idx !== currentCaseIndex) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (idx !== currentCaseIndex) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
+                    }
+                  }}
+                >
+                  <div style={{
+                    fontSize: '10px',
+                    color: idx === currentCaseIndex ? '#fff' : 'var(--sidebar-text)',
+                    marginBottom: 'var(--spacing-xs)',
+                    fontWeight: 'var(--font-weight-semibold)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    Case {idx + 1}
+                  </div>
+                  <div style={{
+                    fontSize: 'var(--font-size-sm)',
+                    color: '#fff',
+                    fontWeight: idx === currentCaseIndex ? 'var(--font-weight-semibold)' : 'var(--font-weight-normal)',
+                    lineHeight: '1.3',
+                    marginBottom: 'var(--spacing-xs)'
+                  }}>
+                    {caseItem.title}
+                  </div>
+                  <div style={{
+                    fontSize: '11px',
+                    color: idx === currentCaseIndex ? 'rgba(255, 255, 255, 0.9)' : 'var(--sidebar-text)'
+                  }}>
+                    {caseItem.images?.length || 0} image{caseItem.images?.length !== 1 ? 's' : ''}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Image Display */}
         <div style={{
           flex: 1,
@@ -452,23 +529,31 @@ function SessionView() {
               {currentCase?.clinical_history || 'N/A'}
             </p>
 
-            <h4 style={{
-              fontSize: 'var(--font-size-sm)',
-              color: 'var(--sidebar-text)',
-              marginBottom: 'var(--spacing-sm)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
-              Findings
-            </h4>
-            <p style={{
-              fontSize: 'var(--font-size-sm)',
-              lineHeight: 'var(--line-height-relaxed)',
-              marginBottom: 'var(--spacing-xl)',
-              color: '#fff'
-            }}>
-              {currentCase?.findings || 'N/A'}
-            </p>
+            {currentImage?.description && (
+              <>
+                <h4 style={{
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--sidebar-text)',
+                  marginBottom: 'var(--spacing-sm)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  Findings on This Image
+                </h4>
+                <p style={{
+                  fontSize: 'var(--font-size-sm)',
+                  lineHeight: 'var(--line-height-relaxed)',
+                  marginBottom: 'var(--spacing-xl)',
+                  color: '#fff',
+                  backgroundColor: 'rgba(91, 79, 219, 0.1)',
+                  padding: 'var(--spacing-md)',
+                  borderRadius: 'var(--radius-md)',
+                  borderLeft: '3px solid var(--color-primary)'
+                }}>
+                  {currentImage.description}
+                </p>
+              </>
+            )}
 
             <h4 style={{
               fontSize: 'var(--font-size-sm)',
@@ -488,7 +573,7 @@ function SessionView() {
               {currentCase?.diagnosis || 'N/A'}
             </p>
 
-            {currentCase?.discussion_points && (
+            {currentCase?.discussion && (
               <>
                 <h4 style={{
                   fontSize: 'var(--font-size-sm)',
@@ -497,7 +582,7 @@ function SessionView() {
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em'
                 }}>
-                  Discussion Points
+                  Discussion
                 </h4>
                 <p style={{
                   fontSize: 'var(--font-size-sm)',
@@ -505,7 +590,7 @@ function SessionView() {
                   marginBottom: 'var(--spacing-xl)',
                   color: '#fff'
                 }}>
-                  {currentCase.discussion_points}
+                  {currentCase.discussion}
                 </p>
               </>
             )}
