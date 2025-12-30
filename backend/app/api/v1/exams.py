@@ -11,6 +11,7 @@ from app.models.user import User
 from app.models.exam import Exam
 from app.models.case import Case
 from app.schemas.exam import ExamCreate, ExamUpdate, ExamResponse
+from app.schemas.case import CaseResponse
 
 
 router = APIRouter()
@@ -98,6 +99,71 @@ async def get_exam(
         )
 
     return await convert_exam_to_response(exam)
+
+
+@router.get("/{exam_id}/preview")
+async def preview_exam(
+    exam_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get exam with full case details for preview
+    Returns exam with all cases expanded including images and metadata
+    """
+    exam = await Exam.get(exam_id)
+
+    if not exam:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Exam not found"
+        )
+
+    await exam.fetch_all_links()
+
+    # Build full cases data
+    cases_data = []
+    for case in exam.cases:
+        await case.fetch_all_links()
+
+        # Get creator info
+        if hasattr(case.created_by, 'ref'):
+            creator_id = str(case.created_by.ref.id)
+        elif hasattr(case.created_by, 'id'):
+            creator_id = str(case.created_by.id)
+        else:
+            creator_id = str(case.created_by)
+
+        cases_data.append({
+            'id': str(case.id),
+            'title': case.title,
+            'clinical_history': case.clinical_history,
+            'images': case.images,
+            'key_findings': case.key_findings,
+            'diagnosis': case.diagnosis,
+            'discussion': case.discussion,
+            'created_by': creator_id,
+            'created_at': case.created_at,
+            'updated_at': case.updated_at
+        })
+
+    # Get exam creator info
+    if hasattr(exam.created_by, 'ref'):
+        exam_creator_id = str(exam.created_by.ref.id)
+    elif hasattr(exam.created_by, 'id'):
+        exam_creator_id = str(exam.created_by.id)
+    else:
+        exam_creator_id = str(exam.created_by)
+
+    return {
+        'id': str(exam.id),
+        'title': exam.title,
+        'description': exam.description,
+        'duration_minutes': exam.duration_minutes,
+        'cases': cases_data,
+        'created_by': exam_creator_id,
+        'created_at': exam.created_at,
+        'updated_at': exam.updated_at
+    }
 
 
 @router.patch("/{exam_id}", response_model=ExamResponse)

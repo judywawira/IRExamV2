@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { examsAPI, casesAPI } from '../services/api'
+import ExamPreview from '../components/ExamPreview'
 
 function ExamForm() {
   const navigate = useNavigate()
@@ -21,6 +22,9 @@ function ExamForm() {
   const [loading, setLoading] = useState(false)
   const [loadingCases, setLoadingCases] = useState(true)
   const [error, setError] = useState('')
+  const [showPreview, setShowPreview] = useState(false)
+  const [previewData, setPreviewData] = useState(null)
+  const [loadingPreview, setLoadingPreview] = useState(false)
 
   useEffect(() => {
     loadCases()
@@ -90,6 +94,26 @@ function ExamForm() {
       return false
     }
     return true
+  }
+
+  const handlePreview = async () => {
+    if (!id) {
+      setError('Please save the exam first before previewing')
+      return
+    }
+
+    setLoadingPreview(true)
+    setError('')
+
+    try {
+      const response = await examsAPI.preview(id)
+      setPreviewData(response.data)
+      setShowPreview(true)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to load preview')
+    } finally {
+      setLoadingPreview(false)
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -296,7 +320,7 @@ function ExamForm() {
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <button
               type="submit"
               className="btn btn-primary"
@@ -304,6 +328,21 @@ function ExamForm() {
             >
               {loading ? 'Saving...' : 'Save Exam'}
             </button>
+            {isEdit && (
+              <button
+                type="button"
+                onClick={handlePreview}
+                className="btn"
+                disabled={loadingPreview}
+                style={{
+                  backgroundColor: 'var(--color-warning)',
+                  color: '#000',
+                  fontWeight: 'var(--font-weight-semibold)'
+                }}
+              >
+                {loadingPreview ? 'Loading Preview...' : '📋 Preview Exam'}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => navigate('/exams')}
@@ -315,6 +354,14 @@ function ExamForm() {
           </div>
         </form>
       </div>
+
+      {/* Exam Preview Modal */}
+      {showPreview && previewData && (
+        <ExamPreview
+          examData={previewData}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
     </div>
   )
 }

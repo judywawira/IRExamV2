@@ -84,6 +84,7 @@ export const casesAPI = {
 export const examsAPI = {
   list: () => api.get('/exams'),
   get: (id) => api.get(`/exams/${id}`),
+  preview: (id) => api.get(`/exams/${id}/preview`),
   create: (data) => api.post('/exams', data),
   update: (id, data) => api.patch(`/exams/${id}`, data),
   delete: (id) => api.delete(`/exams/${id}`),
