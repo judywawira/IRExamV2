@@ -10,7 +10,7 @@ class ExamCreate(BaseModel):
     """Schema for creating an exam"""
     title: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
-    duration_minutes: int = Field(..., gt=0, le=480)  # Max 8 hours
+    duration_minutes: Optional[int] = Field(None, gt=0, le=480)  # Optional, max 8 hours
     case_ids: List[str] = Field(..., min_length=1)
 
 
@@ -27,7 +27,7 @@ class ExamResponse(BaseModel):
     id: str
     title: str
     description: Optional[str] = None
-    duration_minutes: int
+    duration_minutes: Optional[int] = None
     case_ids: List[str]
     created_by: str  # User ID
     created_at: datetime
