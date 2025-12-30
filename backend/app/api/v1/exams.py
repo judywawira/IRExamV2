@@ -84,23 +84,6 @@ async def list_exams(
     return [await convert_exam_to_response(exam) for exam in exams]
 
 
-@router.get("/{exam_id}", response_model=ExamResponse)
-async def get_exam(
-    exam_id: str,
-    current_user: User = Depends(get_current_active_user)
-):
-    """Get exam by ID"""
-    exam = await Exam.get(exam_id)
-
-    if not exam:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Exam not found"
-        )
-
-    return await convert_exam_to_response(exam)
-
-
 @router.get("/{exam_id}/preview")
 async def preview_exam(
     exam_id: str,
@@ -164,6 +147,23 @@ async def preview_exam(
         'created_at': exam.created_at,
         'updated_at': exam.updated_at
     }
+
+
+@router.get("/{exam_id}", response_model=ExamResponse)
+async def get_exam(
+    exam_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get exam by ID"""
+    exam = await Exam.get(exam_id)
+
+    if not exam:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Exam not found"
+        )
+
+    return await convert_exam_to_response(exam)
 
 
 @router.patch("/{exam_id}", response_model=ExamResponse)
