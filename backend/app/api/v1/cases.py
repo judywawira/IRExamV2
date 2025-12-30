@@ -42,9 +42,9 @@ def convert_case_to_response(case: Case) -> CaseResponse:
         id=str(case.id),
         title=case.title,
         clinical_history=case.clinical_history,
-        findings=case.findings,
+        key_findings=case.key_findings,
         diagnosis=case.diagnosis,
-        discussion_points=case.discussion_points,
+        discussion=case.discussion,
         images=[
             CaseImageResponse(**img.dict())
             for img in case.images
@@ -68,9 +68,9 @@ async def create_case(
     case = Case(
         title=case_data.title,
         clinical_history=case_data.clinical_history,
-        findings=case_data.findings,
+        key_findings=case_data.key_findings,
         diagnosis=case_data.diagnosis,
-        discussion_points=case_data.discussion_points,
+        discussion=case_data.discussion,
         created_by=current_user
     )
 
