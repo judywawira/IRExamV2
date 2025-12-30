@@ -27,6 +27,7 @@ function SessionView() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [timeRemaining, setTimeRemaining] = useState(null)
   const [connected, setConnected] = useState(false)
+  const [showCaseGrid, setShowCaseGrid] = useState(false)
 
   const timerRef = useRef(null)
 
@@ -246,61 +247,65 @@ function SessionView() {
   const currentImage = currentCase?.images[currentImageIndex]
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#000' }}>
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.95)',
+      zIndex: 1000,
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
       {/* Header */}
       <div style={{
-        background: 'var(--sidebar-bg)',
-        color: 'white',
-        padding: 'var(--spacing-lg) var(--spacing-2xl)',
+        padding: 'var(--spacing-lg)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+        backgroundColor: 'rgba(0, 0, 0, 0.5)'
       }}>
-        <div>
-          <h2 style={{
-            margin: 0,
-            fontSize: 'var(--font-size-xl)',
-            fontWeight: 'var(--font-weight-semibold)'
-          }}>
-            {session.name}
-          </h2>
-          <div style={{
-            fontSize: 'var(--font-size-sm)',
-            color: 'var(--sidebar-text)',
-            marginTop: 'var(--spacing-xs)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--spacing-md)'
-          }}>
-            <span>{user.email}</span>
-            <span>•</span>
-            <span style={{ color: connected ? 'var(--color-success)' : 'var(--color-error)' }}>
-              {connected ? '🟢 Connected' : '🔴 Disconnected'}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-lg)' }}>
+          <div>
+            <div style={{
+              display: 'inline-block',
+              backgroundColor: status === 'active' ? 'var(--color-success)' :
+                status === 'paused' ? 'var(--color-warning)' :
+                status === 'completed' ? 'var(--color-neutral)' : 'var(--color-info)',
+              color: status === 'paused' ? '#000' : '#fff',
+              padding: '4px 12px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: 'var(--font-weight-bold)',
+              marginRight: 'var(--spacing-md)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              {status === 'active' ? '🔴 LIVE' :
+               status === 'paused' ? '⏸ PAUSED' :
+               status === 'completed' ? '✓ COMPLETED' : '⏱ SCHEDULED'}
+            </div>
+            <span style={{ color: '#fff', fontSize: '20px', fontWeight: 'var(--font-weight-bold)' }}>
+              {session.name}
             </span>
           </div>
+          {exam?.duration_minutes && (
+            <div style={{
+              fontSize: '24px',
+              fontWeight: 'var(--font-weight-bold)',
+              fontFamily: 'monospace',
+              color: timeRemaining !== null && timeRemaining < 300 ? 'var(--color-error)' : '#fff'
+            }}>
+              ⏱ {formatTime(timeRemaining)}
+            </div>
+          )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xl)' }}>
-          <span className={`badge ${
-            status === 'active' ? 'badge-success' :
-            status === 'paused' ? 'badge-warning' :
-            status === 'completed' ? 'badge-neutral' : 'badge-info'
-          }`} style={{ fontSize: 'var(--font-size-sm)' }}>
-            {status.toUpperCase()}
-          </span>
-
-          <div style={{
-            fontSize: '28px',
-            fontWeight: 'var(--font-weight-bold)',
-            fontFamily: 'monospace',
-            color: timeRemaining !== null && timeRemaining < 300 ? 'var(--color-error)' : '#fff'
-          }}>
-            {formatTime(timeRemaining)}
-          </div>
-
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
           {isExaminer && (
-            <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+            <>
               {status === 'scheduled' && (
                 <button onClick={handleStart} className="btn btn-success btn-sm">
                   ▶ Start
@@ -310,7 +315,8 @@ function SessionView() {
               {status === 'active' && (
                 <button onClick={handlePause} className="btn btn-sm" style={{
                   backgroundColor: 'var(--color-warning)',
-                  color: 'white'
+                  color: '#000',
+                  fontWeight: 'var(--font-weight-semibold)'
                 }}>
                   ⏸ Pause
                 </button>
@@ -327,15 +333,31 @@ function SessionView() {
                   ⏹ End
                 </button>
               )}
-            </div>
+
+              <button
+                onClick={() => setShowCaseGrid(!showCaseGrid)}
+                className="btn btn-secondary btn-sm"
+                title={showCaseGrid ? "Hide case navigation" : "Show case navigation"}
+              >
+                {showCaseGrid ? '◀ Hide Cases' : '☰ Show Cases'}
+              </button>
+            </>
           )}
+
+          <button
+            onClick={() => navigate('/sessions')}
+            className="btn btn-secondary btn-sm"
+            style={{ minWidth: '100px' }}
+          >
+            ✕ Close
+          </button>
         </div>
       </div>
 
       {/* Main Content */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Left Sidebar - Case Grid Navigation */}
-        {isExaminer && (
+        {/* Left Sidebar - Case Grid Navigation (Toggleable) */}
+        {isExaminer && showCaseGrid && (
           <div style={{
             width: '240px',
             background: 'var(--sidebar-bg)',
@@ -612,28 +634,78 @@ function SessionView() {
             </h4>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: 'var(--spacing-sm)'
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: 'var(--spacing-md)'
             }}>
               {currentCase?.images.map((img, idx) => (
                 <div
                   key={img.id}
                   onClick={() => isExaminer && handleNavigate(currentCaseIndex, idx)}
                   style={{
-                    border: idx === currentImageIndex ? '2px solid var(--color-primary)' : '2px solid rgba(255, 255, 255, 0.1)',
+                    cursor: isExaminer ? 'pointer' : 'default',
+                    transition: 'all 0.2s ease',
+                    position: 'relative'
+                  }}
+                  title={img.description || `Image ${idx + 1}`}
+                >
+                  <div style={{
+                    border: idx === currentImageIndex ? '3px solid var(--color-primary)' : '2px solid rgba(255, 255, 255, 0.1)',
                     borderRadius: 'var(--radius-md)',
                     overflow: 'hidden',
-                    cursor: isExaminer ? 'pointer' : 'default',
-                    aspectRatio: '1',
+                    aspectRatio: '16/9',
                     background: '#000',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <img
-                    src={`/uploads/${img.filename}`}
-                    alt={`Image ${idx + 1}`}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
+                    position: 'relative'
+                  }}>
+                    <img
+                      src={`/uploads/${img.filename}`}
+                      alt={`Image ${idx + 1}`}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      top: '4px',
+                      right: '4px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                      color: '#fff',
+                      padding: '2px 8px',
+                      borderRadius: '3px',
+                      fontSize: '11px',
+                      fontWeight: 'var(--font-weight-semibold)'
+                    }}>
+                      {idx + 1}
+                    </div>
+                    {img.description && (
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '4px',
+                        left: '4px',
+                        right: '4px',
+                        backgroundColor: 'rgba(91, 79, 219, 0.9)',
+                        color: '#fff',
+                        padding: '4px',
+                        borderRadius: '3px',
+                        fontSize: '10px',
+                        lineHeight: '1.2'
+                      }}>
+                        📋
+                      </div>
+                    )}
+                  </div>
+                  {img.description && (
+                    <div style={{
+                      fontSize: '11px',
+                      color: 'var(--sidebar-text)',
+                      marginTop: '4px',
+                      lineHeight: '1.3',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}>
+                      {img.description}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
