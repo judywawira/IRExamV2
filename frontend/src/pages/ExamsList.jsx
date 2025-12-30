@@ -5,10 +5,14 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { examsAPI } from '../services/api'
+import ExamPreview from '../components/ExamPreview'
 
 function ExamsList() {
   const [exams, setExams] = useState([])
   const [loading, setLoading] = useState(true)
+  const [showPreview, setShowPreview] = useState(false)
+  const [previewData, setPreviewData] = useState(null)
+  const [loadingPreview, setLoadingPreview] = useState(false)
 
   useEffect(() => {
     loadExams()
@@ -33,6 +37,20 @@ function ExamsList() {
       loadExams()
     } catch (error) {
       alert('Failed to delete exam')
+    }
+  }
+
+  const handlePreview = async (id) => {
+    setLoadingPreview(true)
+
+    try {
+      const response = await examsAPI.preview(id)
+      setPreviewData(response.data)
+      setShowPreview(true)
+    } catch (error) {
+      alert(error.response?.data?.detail || 'Failed to load preview')
+    } finally {
+      setLoadingPreview(false)
     }
   }
 
@@ -128,6 +146,19 @@ function ExamsList() {
                   </td>
                   <td>
                     <div className="table-actions" style={{ justifyContent: 'flex-end' }}>
+                      <button
+                        onClick={() => handlePreview(exam.id)}
+                        className="btn btn-sm"
+                        title="Preview exam"
+                        disabled={loadingPreview}
+                        style={{
+                          backgroundColor: 'var(--color-warning)',
+                          color: '#000',
+                          fontWeight: 'var(--font-weight-semibold)'
+                        }}
+                      >
+                        📋 Preview
+                      </button>
                       <Link
                         to={`/exams/${exam.id}/edit`}
                         className="btn btn-sm btn-secondary"
@@ -149,6 +180,14 @@ function ExamsList() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* Exam Preview Modal */}
+      {showPreview && previewData && (
+        <ExamPreview
+          examData={previewData}
+          onClose={() => setShowPreview(false)}
+        />
       )}
     </div>
   )
