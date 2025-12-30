@@ -40,9 +40,9 @@ class Case(Document):
 
     title: str
     clinical_history: Optional[str] = None
-    findings: Optional[str] = None
+    key_findings: Optional[str] = None  # Summary of key findings across all images
     diagnosis: Optional[str] = None
-    discussion_points: Optional[str] = None
+    discussion: Optional[str] = None  # Discussion points, differential diagnoses, teaching points
     images: List[CaseImage] = []
     annotations: List[CaseAnnotation] = []
 
@@ -66,9 +66,9 @@ class Case(Document):
             "example": {
                 "title": "Chest X-ray - Pneumothorax",
                 "clinical_history": "65-year-old male with sudden onset chest pain",
-                "findings": "Large right-sided pneumothorax",
+                "key_findings": "Large right-sided pneumothorax",
                 "diagnosis": "Spontaneous pneumothorax",
-                "discussion_points": "Emergency chest tube insertion indicated",
+                "discussion": "Emergency chest tube insertion indicated",
                 "images": [],
                 "annotations": []
             }

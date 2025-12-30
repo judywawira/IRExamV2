@@ -261,27 +261,10 @@ function CaseView() {
         </div>
       )}
 
-      {/* General Findings (legacy field) */}
-      {caseData.findings && (
+      {/* Discussion */}
+      {caseData.discussion && (
         <div className="card">
-          <h3 className="section-title">General Findings</h3>
-          <div style={{
-            padding: 'var(--spacing-lg)',
-            backgroundColor: 'var(--color-bg-secondary)',
-            borderRadius: 'var(--radius-md)',
-            lineHeight: 'var(--line-height-relaxed)',
-            whiteSpace: 'pre-wrap',
-            color: 'var(--color-text-primary)'
-          }}>
-            {caseData.findings}
-          </div>
-        </div>
-      )}
-
-      {/* Discussion Points */}
-      {caseData.discussion_points && (
-        <div className="card">
-          <h3 className="section-title">Discussion Points</h3>
+          <h3 className="section-title">Discussion</h3>
           <div style={{
             padding: 'var(--spacing-lg)',
             backgroundColor: 'var(--color-warning-bg)',
@@ -291,7 +274,7 @@ function CaseView() {
             whiteSpace: 'pre-wrap',
             color: 'var(--color-text-primary)'
           }}>
-            {caseData.discussion_points}
+            {caseData.discussion}
           </div>
         </div>
       )}
@@ -316,7 +299,7 @@ function CaseView() {
       )}
 
       {/* Empty State */}
-      {!caseData.clinical_history && !caseData.findings && !caseData.diagnosis && !caseData.discussion_points && (!caseData.images || caseData.images.length === 0) && (
+      {!caseData.clinical_history && !caseData.diagnosis && !caseData.discussion && (!caseData.images || caseData.images.length === 0) && (
         <div className="card">
           <div style={{
             textAlign: 'center',

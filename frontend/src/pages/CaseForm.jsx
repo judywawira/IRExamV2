@@ -21,7 +21,7 @@ function CaseForm() {
   const [formData, setFormData] = useState({
     title: '',
     clinical_history: '',
-    discussion_points: '',
+    discussion: '',
     diagnosis: ''
   })
   const [imagePreviews, setImagePreviews] = useState([])
@@ -43,7 +43,7 @@ function CaseForm() {
       setFormData({
         title: response.data.title,
         clinical_history: response.data.clinical_history || '',
-        discussion_points: response.data.discussion_points || '',
+        discussion: response.data.discussion || '',
         diagnosis: response.data.diagnosis || ''
       })
       // Load existing images if editing
@@ -150,8 +150,8 @@ function CaseForm() {
       setError('Clinical History is required')
       return false
     }
-    if (!formData.discussion_points.trim()) {
-      setError('Discussion Points are required')
+    if (!formData.discussion.trim()) {
+      setError('Discussion is required')
       return false
     }
     if (!formData.diagnosis.trim()) {
@@ -504,12 +504,12 @@ function CaseForm() {
           {/* 4. Discussion Points (mandatory) */}
           <div className="form-group">
             <label className="form-label">
-              Discussion Points <span style={{ color: '#d32f2f' }}>*</span>
+              Discussion <span style={{ color: '#d32f2f' }}>*</span>
             </label>
             <textarea
-              name="discussion_points"
+              name="discussion"
               className="form-textarea"
-              value={formData.discussion_points}
+              value={formData.discussion}
               onChange={handleChange}
               required
               rows="5"

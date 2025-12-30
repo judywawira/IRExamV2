@@ -34,18 +34,18 @@ class CaseCreate(BaseModel):
     """Schema for creating a case"""
     title: str = Field(..., min_length=1, max_length=200)
     clinical_history: Optional[str] = None
-    findings: Optional[str] = None
+    key_findings: Optional[str] = None
     diagnosis: Optional[str] = None
-    discussion_points: Optional[str] = None
+    discussion: Optional[str] = None
 
 
 class CaseUpdate(BaseModel):
     """Schema for updating a case"""
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     clinical_history: Optional[str] = None
-    findings: Optional[str] = None
+    key_findings: Optional[str] = None
     diagnosis: Optional[str] = None
-    discussion_points: Optional[str] = None
+    discussion: Optional[str] = None
 
 
 class CaseResponse(BaseModel):
@@ -53,9 +53,9 @@ class CaseResponse(BaseModel):
     id: str
     title: str
     clinical_history: Optional[str] = None
-    findings: Optional[str] = None
+    key_findings: Optional[str] = None
     diagnosis: Optional[str] = None
-    discussion_points: Optional[str] = None
+    discussion: Optional[str] = None
     images: List[CaseImageResponse] = []
     annotations: List[CaseAnnotationResponse] = []
     created_by: str  # User ID
