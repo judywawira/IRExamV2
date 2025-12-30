@@ -120,7 +120,7 @@ async def preview_exam(
             'id': str(case.id),
             'title': case.title,
             'clinical_history': case.clinical_history,
-            'images': case.images,
+            'images': [img.dict() for img in case.images],
             'key_findings': case.key_findings,
             'diagnosis': case.diagnosis,
             'discussion': case.discussion,

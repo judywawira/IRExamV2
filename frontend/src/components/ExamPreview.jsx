@@ -54,8 +54,8 @@ function ExamPreview({ examData, onClose }) {
   }
 
   const currentImage = currentCase.images?.[currentImageIndex]
-  const imageUrl = currentImage ? `${API_URL}/uploads/${currentImage.file_path}` : null
-  const isVideo = currentImage?.file_path?.match(/\.(mp4|webm|ogg)$/i)
+  const imageUrl = currentImage ? `${API_URL}/uploads/${currentImage.filename}` : null
+  const isVideo = currentImage?.filename?.match(/\.(mp4|webm|ogg)$/i)
 
   return (
     <div style={{
@@ -282,8 +282,8 @@ function ExamPreview({ examData, onClose }) {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
               {currentCase.images?.map((image, idx) => {
-                const thumbUrl = `${API_URL}/uploads/${image.file_path}`
-                const isThumbVideo = image.file_path?.match(/\.(mp4|webm|ogg)$/i)
+                const thumbUrl = `${API_URL}/uploads/${image.filename}`
+                const isThumbVideo = image.filename?.match(/\.(mp4|webm|ogg)$/i)
                 const isSelected = idx === currentImageIndex
 
                 return (
